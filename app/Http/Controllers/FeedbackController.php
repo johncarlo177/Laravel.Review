@@ -95,14 +95,8 @@ class FeedbackController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        // Get all QR code IDs for summary (including ones from user's own feedbacks)
-        $allQrcodeIds = $qrcodeIds;
-        if (!$isSuperAdmin && $user->email) {
-            $userFeedbackQrcodeIds = BusinessReviewFeedback::where('email', $user->email)
-                ->pluck('qrcode_id')
-                ->unique();
-            $allQrcodeIds = $qrcodeIds->merge($userFeedbackQrcodeIds)->unique();
-        }
+        // Build summary based on the same query logic used for displaying feedbacks
+        $summary = $this->buildSummary($qrcodeIds, $isSuperAdmin, $user);
 
         $feedbackData = [
             'data' => $feedbacks->items(),
@@ -110,7 +104,7 @@ class FeedbackController extends Controller
             'to' => $feedbacks->lastItem(),
             'total' => $feedbacks->total(),
             'links' => Arr::get($feedbacks->toArray(), 'links', []),
-            'summary' => $this->buildSummary($allQrcodeIds),
+            'summary' => $summary,
         ];
 
         // Get all QR code IDs for filter dropdown (including ones from user's own feedbacks)
@@ -228,17 +222,36 @@ class FeedbackController extends Controller
         }
     }
 
-    private function buildSummary(Collection $qrcodeIds): array
+    private function buildSummary(Collection $qrcodeIds, bool $isSuperAdmin = false, $user = null): array
     {
         $summary = $this->buildEmptySummary();
 
-        if ($qrcodeIds->isEmpty()) {
-            return $summary;
+        // Build query using the same logic as the main feedback query
+        $summaryQuery = BusinessReviewFeedback::query();
+        
+        if ($isSuperAdmin) {
+            // Super admins see all feedbacks - no filtering needed
+        } else {
+            // Regular users see feedbacks for their QR codes OR feedbacks they submitted
+            $summaryQuery->where(function ($query) use ($qrcodeIds, $user) {
+                // Show feedbacks for QR codes owned by user
+                if ($qrcodeIds->isNotEmpty()) {
+                    $query->whereIn('qrcode_id', $qrcodeIds);
+                }
+                
+                // Also show feedbacks submitted by the logged-in user (matching by email)
+                if ($user && $user->email) {
+                    if ($qrcodeIds->isNotEmpty()) {
+                        $query->orWhere('email', $user->email);
+                    } else {
+                        $query->where('email', $user->email);
+                    }
+                }
+            });
         }
 
-        $totals = BusinessReviewFeedback::query()
+        $totals = $summaryQuery
             ->selectRaw('stars, COUNT(*) as total')
-            ->whereIn('qrcode_id', $qrcodeIds)
             ->groupBy('stars')
             ->pluck('total', 'stars');
 

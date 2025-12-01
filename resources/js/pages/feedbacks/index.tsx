@@ -8,6 +8,8 @@ export default function Feedbacks() {
   const [searchTerm, setSearchTerm] = useState(pageFilters.search || '');
   const [selectedQRCode, setSelectedQRCode] = useState(pageFilters.qrcode || 'all');
   const [selectedStars, setSelectedStars] = useState(pageFilters.stars || 'all');
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,22 @@ export default function Feedbacks() {
         <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{stars}/5</span>
       </div>
     );
+  };
+
+  const handleViewFeedback = (feedback: any) => {
+    setSelectedFeedback(feedback);
+    setIsModalOpen(true);
+  };
+
+  const handleSetupFeedback = (feedback: any) => {
+    // TODO: Implement setup functionality
+    console.log('Setup feedback:', feedback);
+    // You can add your setup logic here, e.g., router.visit('/feedbacks/setup/' + feedback.id)
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedFeedback(null);
   };
 
   return (
@@ -178,7 +196,7 @@ export default function Feedbacks() {
         {/* Table - Enhanced */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">QR Code</th>
@@ -187,12 +205,13 @@ export default function Feedbacks() {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Feedback</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider sticky right-0 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 z-10">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {(feedbacks?.data || []).length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <div className="text-6xl mb-4 opacity-20">📭</div>
                         <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No feedbacks found</p>
@@ -248,6 +267,32 @@ export default function Feedbacks() {
                           }) : 'N/A'}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center sticky right-0 bg-white dark:bg-gray-800 z-10">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleViewFeedback(feedback)}
+                            className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md"
+                          >
+                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetupFeedback(feedback)}
+                            className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-green-600 dark:bg-green-500 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md"
+                          >
+                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Setup
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -286,6 +331,128 @@ export default function Feedbacks() {
           )}
         </div>
       </div>
+
+      {/* View Feedback Modal */}
+      {isModalOpen && selectedFeedback && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={closeModal}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+              <div className="bg-white dark:bg-gray-800 px-6 pt-6 pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    Feedback Details
+                  </h3>
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Rating */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Rating
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {renderStars(selectedFeedback.stars)}
+                    </div>
+                  </div>
+
+                  {/* QR Code */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      QR Code
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {selectedFeedback.qrcode?.title || 'N/A'}
+                    </p>
+                  </div>
+
+                  {/* Customer Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Customer Name
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {selectedFeedback.name || <span className="text-gray-400 italic">Anonymous</span>}
+                    </p>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Email
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {selectedFeedback.email || <span className="text-gray-400">N/A</span>}
+                    </p>
+                  </div>
+
+                  {/* Mobile */}
+                  {selectedFeedback.mobile && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Mobile
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">
+                        {selectedFeedback.mobile}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Feedback */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Feedback
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                      {selectedFeedback.feedback || <span className="text-gray-400 italic">No feedback provided</span>}
+                    </p>
+                  </div>
+
+                  {/* Date */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Date Submitted
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {selectedFeedback.created_at ? new Date(selectedFeedback.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end">
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PageTemplate>
   );
 }

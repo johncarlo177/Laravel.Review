@@ -97,11 +97,18 @@ class QRCodeRedirectController extends Controller
 
         if (!$info->isBot()) {
             $this->collectScanDetails($redirect, $request);
-            $this->sendSurveyNotification($user);
+            
+            // Only send notification and redirect if this is NOT the dyvihb page itself
+            // This prevents infinite redirect loops and allows direct access to /dyvihb
+            if ($redirect->slug !== 'dyvihb') {
+                $this->sendSurveyNotification($user);
+                // Redirect immediately to survey page
+                return redirect(config('app.url') . '/dyvihb');
+            }
         }
 
-        // Redirect to survey page
-        return redirect(config('app.url') . '/dyvihb');
+        // Show the content for /dyvihb page when accessed directly
+        return $this->renderRedirect($redirect);
     }
 
     protected function didReachAllowedQRCodeScanLimit($redirect)

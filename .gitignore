@@ -1,0 +1,68 @@
+# ============================================
+# Laravel Core
+# ============================================
+/vendor/
+/vendor11/
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+/storage/*.key
+
+# ============================================
+# Environment Files
+# ============================================
+.env
+.env.*
+!.env.example
+
+# ============================================
+# Laravel Cache & Logs
+# ============================================
+/bootstrap/cache/*.php
+/storage/app/public
+/storage/framework/cache/data
+/storage/framework/sessions
+/storage/framework/views
+/storage/logs/*.log
+
+# ============================================
+# IDE / Editor Files
+# ============================================
+.idea/
+.vscode/
+*.code-workspace
+
+# ============================================
+# System Files
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+
+# ============================================
+# Composer / NPM Artifacts
+# ============================================
+composer.phar
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# ============================================
+# Testing
+# ============================================
+/coverage
+.phpunit.cache
+.phpunit.result.cache
+
+# ============================================
+# OS & Misc
+# ============================================
+/screenshots
+.env.backup
+*.orig
+*.current

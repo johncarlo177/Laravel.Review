@@ -1,0 +1,1 @@
+{"name":"jangobrick\/php-svg","homepage":"https:\/\/github.com\/JangoBrick\/php-svg","type":"library","description":"Generate SVG files with PHP","keywords":["svg"],"license":"MIT","authors":[{"name":"JangoBrick"}],"require":{"php":">=5.3.3"},"autoload":{"psr-4":{"JangoBrick\\SVG\\":"src\/"}},"time":"2016-09-19T16:30:00+00:00"}

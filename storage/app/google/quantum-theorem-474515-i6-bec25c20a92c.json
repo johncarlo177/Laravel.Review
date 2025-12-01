@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "quantum-theorem-474515-i6",
+  "private_key_id": "bec25c20a92c0af1ddb2e84031f15b9b83b80d4b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC9sTAoUddB6dbv\nKxLh/zNIy7WPbc443WREtyoHC/Ma0AWc8IEEI6Vn+ZW47epbjdsmnmLMCNTgyKMV\nH3zI/paNICD9T67KH48nEa/BELMDnThaKDphjABgwbs5rd9pyYuZCOGBu2ykUo9j\nJPHaFodIAFNk3AGOp4Fgcbswssv/9NdTb3kkA8OSfLOMxDq+QFZXRDIms/JK4GS3\nJdukTiLaLC5cdZw3WT86JyYZrHuCrht0iPhKkf0P8G3pemIOw3DgEi1iRBD59gFR\nroK+OfcpJzF7kR3V2LS+MgdBFLfX7GnPFR3lkxBEPj9wP2SZopLqSdgG7wOhHQu1\nkZmvuR/vAgMBAAECggEAA3LevMTsJHMjaLrAP6KbpJWrid2Fs8v2oDcySOmDNHgW\nugk3V0NspOzJN5D/w0VbeCLGCg6ZDDMpn98wLhlO1GcCoohZ1avoNt4f82Mh1g18\nMktr8E0Szq+G/1/1YV98Lb6XFvw41+32VGeeDAh/0iPLYFiNoLHT7NR0gkil49Pg\nKytWLHI5vVmiiCqsiZAtgE+SlCgIj4tA5uFzITPK5quhSlef4877nmk4E75bMhRJ\nLQP/PRAPxOnPASm92eW1rtKhZoRZeOQ2M2UV1FJbtGSVyUeL+xZmPYfcU4uN+haL\n5GnvyA0g8Bz6enwl4VR5E0NA7nkOoC/sMhm2oQWktQKBgQD3gKzVhda7n2zJH5a6\nrSE6KtzpO8reHzzR0L3gkJUD1WfHlR4ZdcN2T66cBWS7KPlhaK+5UpayjlUwcR1E\ndDM69+uF/Yw/1tWp4e1ieRhnMRlvJMaV1Ng3Po3CWffy+9oKk1v98StRsJo53vfb\nci/l/KuNw9MtMm6WfhIDHUAUmwKBgQDENGkviQjJu4yOnlXZZUxuQCd/Ho8dgAJx\nrRJb1i8N8hFvfHup+00Sa0+4LHc/V/25A8EgqUe1S3I4bVptSQM/kX8706MV8lCO\nhiUzTgHdlc16m0ImUseysLbihPL5k3IYH++n9e21gDbbCLY3FYoB9dHQSHuI0S6k\n6OGDSsKVPQKBgAyUYrR7l/1zTfEvBNc6I300XoQQQPBnQA0eAfifAKPwPdUcFCqR\nHL0vsZ1GfOcyXvJ/gqb1tqkeqN/McANhsJTnsvXdfDpmbfezfwBJTV85VKSchudo\nqRCtwkDFl9+mw19UPBG9J0mAo2YbmhdyR1L2M7YB5QLgFFTb1YiI/Q/PAoGAGUww\nq8JdcbVO4CymIQugmS6IaSmFhmY06ndIQLMTChdGDDvergIK4+8WLkb9cRtlSW+k\nfROWfVem+IOQ/zpEwvN9ljcpdfDyVg4RydWrA+kGv2I5WzudJ/sE+ZvuwCM0uMuV\nWPCqn5ZSfFdZNyz9yFbroJFX7EIcY4LrYMRI5nkCgYANpscWH6ZVSgLOYMp7IrD4\nu/01AcHW93UqPxZT2rEFXPE8xUgi+3aRn4WfyguZh79J0VWOGIT4ILzuGghg0z8P\ndy8QOQkZ7oO8GxYbZewl2D95ysqpaMctDTt65OwJSEF/Bxg+pr3L/CChfmoI2kK3\nsYaCXEQiWm8OlTEc7KXFGw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "neviane@quantum-theorem-474515-i6.iam.gserviceaccount.com",
+  "client_id": "115245892910844584887",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/neviane%40quantum-theorem-474515-i6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -13,7 +13,11 @@ class FeedbackRecoveryService
 
     public function __construct()
     {
-        $this->apiKey = config('services.openai.secret_key', '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');
+        $this->apiKey = config('services.openai.secret_key');
+        
+        if (empty($this->apiKey)) {
+            Log::warning('OpenAI API key not configured. Please set OPEN_AI_SECRET_KEY in your .env file.');
+        }
     }
 
     /**

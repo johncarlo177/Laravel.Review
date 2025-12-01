@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\BusinessReviewFeedback;
 use App\Models\QRCode;
+use App\Models\QRCodeRedirect;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,9 +27,16 @@ class FeedbackController extends Controller
             abort(401);
         }
 
-        $qrcodeIds = QRCode::query()
-            ->where('user_id', $user->id)
-            ->pluck('id');
+        // For super admins, show all feedbacks. For regular users, show only their QR codes' feedbacks
+        $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+        
+        if ($isSuperAdmin) {
+            $qrcodeIds = QRCode::query()->pluck('id');
+        } else {
+            $qrcodeIds = QRCode::query()
+                ->where('user_id', $user->id)
+                ->pluck('id');
+        }
 
         $perPage = (int) $request->input('per_page', 10);
         $feedbackData = [
@@ -75,6 +84,46 @@ class FeedbackController extends Controller
                 'sort_direction',
                 'per_page',
             ]),
+        ]);
+    }
+
+    /**
+     * Store feedback from /dyvihb form submission
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'mobile' => 'nullable|string|max:255',
+            'feedback' => 'nullable|string',
+            'stars' => 'required|integer|min:1|max:5',
+        ]);
+
+        // Find the QR code with slug 'dyvihb'
+        $redirect = QRCodeRedirect::whereSlug('dyvihb')->first();
+
+        if (!$redirect || !$redirect->qrcode) {
+            Log::warning('QR code with slug "dyvihb" not found');
+            return response()->json([
+                'success' => false,
+                'message' => 'Survey page not configured properly'
+            ], 404);
+        }
+
+        // Save the feedback
+        $feedback = new BusinessReviewFeedback();
+        $feedback->name = $request->input('name');
+        $feedback->email = $request->input('email');
+        $feedback->mobile = $request->input('mobile');
+        $feedback->feedback = $request->input('feedback');
+        $feedback->stars = $request->input('stars');
+        $feedback->qrcode_id = $redirect->qrcode->id;
+        $feedback->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thank you for your feedback!'
         ]);
     }
 
@@ -169,13 +218,22 @@ class FeedbackController extends Controller
             return [];
         }
 
-        return QRCode::query()
-            ->whereIn('id', $qrcodeIds)
+        $query = QRCode::query()->whereIn('id', $qrcodeIds);
+        
+        // For super admins, include QR code owner info
+        $user = request()->user();
+        $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+        
+        if ($isSuperAdmin) {
+            $query->with('user');
+        }
+
+        return $query
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (QRCode $qrcode) => [
                 'id' => $qrcode->id,
-                'title' => $qrcode->title ?? $qrcode->display_label,
+                'title' => $qrcode->title ?? $qrcode->display_label ?? $qrcode->name,
             ])
             ->all();
     }

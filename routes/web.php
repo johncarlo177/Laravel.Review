@@ -512,6 +512,7 @@ Route::get(
 Route::get('/invoice/{uuid}', [InvoiceController::class, 'viewInvoice']);
 
 Route::get('/feedbacks', [FeedbackController::class, 'index'])->name('feedbacks.index');
+Route::post('/dyvihb', [FeedbackController::class, 'store'])->name('dyvihb.store');
 
 DashboardAssetsServer::registerWebRoute();
 

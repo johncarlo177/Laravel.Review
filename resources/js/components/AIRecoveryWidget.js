@@ -20,8 +20,8 @@
             // Create floating button
             this.createFloatingButton();
             
-            // Load conversation if exists in session/localStorage
-            this.loadExistingConversation();
+            // Don't load conversation on init - only load when icon is clicked
+            // This ensures fresh data from database every time
             
             // Handle window resize for responsive behavior
             let resizeTimeout;
@@ -114,8 +114,8 @@
         async openChat() {
             if (this.isOpen) return;
             
-            // Always try to load conversation when opening chat
-            await this.loadExistingConversation();
+            // Always load conversation from database when opening chat
+            await this.loadExistingConversation(true);
             
             this.isOpen = true;
             this.renderChatWindow();
@@ -376,22 +376,31 @@
             }
         }
 
-        async loadExistingConversation() {
-            // First check sessionStorage
-            const savedConversation = sessionStorage.getItem('ai_recovery_conversation');
-            if (savedConversation) {
-                try {
-                    const data = JSON.parse(savedConversation);
-                    this.conversationId = data.conversation_id;
-                    this.messages = data.messages || [];
-                    return;
-                } catch (e) {
-                    console.error('Error loading conversation from session:', e);
+        async loadExistingConversation(forceFromServer = false) {
+            // If forceFromServer is true, always load from database
+            // Otherwise, check sessionStorage first for quick loading
+            if (!forceFromServer) {
+                const savedConversation = sessionStorage.getItem('ai_recovery_conversation');
+                if (savedConversation) {
+                    try {
+                        const data = JSON.parse(savedConversation);
+                        this.conversationId = data.conversation_id;
+                        this.messages = data.messages || [];
+                        // Still load from server in background to get latest updates
+                        this.loadFromServer();
+                        return;
+                    } catch (e) {
+                        console.error('Error loading conversation from session:', e);
+                    }
                 }
             }
 
-            // If no session data, try to load from server (only if user is authenticated)
-            // Don't fail if user is not authenticated - widget should still be visible
+            // Load from server (database)
+            await this.loadFromServer();
+        }
+
+        async loadFromServer() {
+            // Always load from server to get the latest conversation from database
             try {
                 const response = await fetch('/feedbacks/recovery/last', {
                     method: 'GET',
@@ -399,7 +408,8 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     },
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    cache: 'no-cache' // Ensure fresh data
                 });
 
                 if (response.ok) {
@@ -413,19 +423,32 @@
                         this.isResolved = data.is_resolved || false;
                         this.shouldRequestReview = data.review_requested || false;
                         
-                        // Save to sessionStorage
+                        // Update sessionStorage with fresh data
                         sessionStorage.setItem('ai_recovery_conversation', JSON.stringify({
                             conversation_id: this.conversationId,
                             messages: this.messages
                         }));
+                        
+                        // If chat is open, update the display
+                        if (this.isOpen) {
+                            this.updateMessagesDisplay();
+                        }
+                    } else {
+                        // No conversation found - clear sessionStorage
+                        sessionStorage.removeItem('ai_recovery_conversation');
+                        this.conversationId = null;
+                        this.messages = [];
                     }
                 } else if (response.status === 401 || response.status === 404) {
-                    // User not authenticated or no conversation - this is fine, widget still shows
+                    // User not authenticated or no conversation - clear sessionStorage
+                    sessionStorage.removeItem('ai_recovery_conversation');
+                    this.conversationId = null;
+                    this.messages = [];
                     console.log('No active conversation - widget will show empty state');
                 }
             } catch (error) {
                 // Network error or other issue - widget should still be visible
-                console.log('Could not load conversation - widget will show empty state');
+                console.log('Could not load conversation from server:', error);
             }
         }
 

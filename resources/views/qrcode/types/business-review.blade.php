@@ -268,7 +268,7 @@
                     
                     console.log('AI Recovery: Stars =', stars);
                     
-                    if (stars <= 3 && stars > 0) {
+                    if (stars <= 4 && stars > 0) {
                         console.log('AI Recovery: Low rating detected, showing AI popup');
                         
                         // Disable submit button to prevent double submission

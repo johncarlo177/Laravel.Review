@@ -167,9 +167,12 @@ class FeedbackController extends Controller
         $feedback->qrcode_id = $redirect->qrcode->id;
         $feedback->save();
 
-        // Trigger AI recovery for negative feedback (3 stars or less)
+        // Trigger AI recovery for feedback (4 stars or less)
+        // 1-2 stars: High severity, negative sentiment
+        // 3 stars: Medium severity, neutral sentiment
+        // 4 stars: Low severity, neutral sentiment (still needs AI response)
         $aiRecoveryData = null;
-        if ($feedback->stars <= 3) {
+        if ($feedback->stars <= 4) {
             try {
                 Log::info('AI Recovery: Starting recovery process', [
                     'feedback_id' => $feedback->id,
@@ -186,6 +189,10 @@ class FeedbackController extends Controller
                 ]);
                 
                 // Create conversation record
+                // Determine sentiment and severity based on stars
+                $sentiment = $aiAnalysis['sentiment'] ?? ($feedback->stars <= 2 ? 'negative' : ($feedback->stars == 3 ? 'neutral' : 'neutral'));
+                $severity = $aiAnalysis['severity'] ?? ($feedback->stars <= 2 ? 'high' : ($feedback->stars == 3 ? 'medium' : 'low'));
+                
                 $conversation = FeedbackRecoveryConversation::create([
                     'feedback_id' => $feedback->id,
                     'conversation_history' => [
@@ -201,9 +208,9 @@ class FeedbackController extends Controller
                         ],
                     ],
                     'status' => 'active',
-                    'sentiment' => $aiAnalysis['sentiment'] ?? 'negative',
+                    'sentiment' => $sentiment,
                     'category' => $aiAnalysis['category'] ?? 'general',
-                    'severity' => $aiAnalysis['severity'] ?? 'medium',
+                    'severity' => $severity,
                 ]);
 
                 $aiRecoveryData = [

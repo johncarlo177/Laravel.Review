@@ -25,11 +25,16 @@ class FeedbackRecoveryService
      */
     public function analyzeFeedback(BusinessReviewFeedback $feedback): array
     {
-        // First, detect category, sentiment, and severity from the feedback text
+        // First, detect category, sentiment, and severity from the feedback text and stars
         $feedbackText = $feedback->feedback ?? '';
+        $stars = $feedback->stars;
+        
+        // Detect category from feedback text keywords
         $detectedCategory = $this->detectCategory($feedbackText);
-        $detectedSentiment = $this->detectSentimentFromFeedback($feedbackText, $feedback->stars);
-        $detectedSeverity = $this->detectSeverity($feedbackText);
+        
+        // Determine sentiment and severity based on star rating
+        $detectedSentiment = $this->detectSentimentFromStars($stars);
+        $detectedSeverity = $this->detectSeverityFromStars($stars);
         
         $systemPrompt = $this->getSystemPrompt();
         $userMessage = $this->buildFeedbackMessage($feedback);
@@ -54,17 +59,31 @@ class FeedbackRecoveryService
         ];
     }
 
-    protected function detectSentimentFromFeedback(string $text, int $stars): string
+    protected function detectSentimentFromStars(int $stars): string
     {
-        $text = strtolower($text);
-        
-        // Use star rating as primary indicator
+        // Sentiment based on star rating
         if ($stars <= 2) {
             return 'negative';
         } elseif ($stars == 3) {
             return 'neutral';
+        } elseif ($stars == 4) {
+            return 'neutral';
         } else {
             return 'positive';
+        }
+    }
+
+    protected function detectSeverityFromStars(int $stars): string
+    {
+        // Severity based on star rating
+        if ($stars <= 2) {
+            return 'high';
+        } elseif ($stars == 3) {
+            return 'medium';
+        } elseif ($stars == 4) {
+            return 'low';
+        } else {
+            return 'low';
         }
     }
 
@@ -434,24 +453,54 @@ Respond ONLY with your conversational message (1-2 smooth sentences), nothing el
 
     protected function detectCategory(string $text): string
     {
-        $text = strtolower($text);
+        $text = strtolower(trim($text));
         
+        // Enhanced category detection with more specific keywords
         $categories = [
-            'wait_time' => ['wait', 'waited', 'delay', 'delayed', 'slow', 'time', 'late', 'appointment', 'long', 'minutes', 'hours'],
-            'food_quality' => ['cold', 'hot', 'taste', 'quality', 'wrong', 'item', 'food', 'meal', 'order', 'delivered', 'burnt', 'overcooked', 'undercooked', 'spoiled', 'bad food'],
-            'service' => ['rude', 'staff', 'service', 'attitude', 'unfriendly', 'impolite', 'cashier', 'server', 'waiter', 'employee'],
-            'cleanliness' => ['dirty', 'clean', 'messy', 'table', 'tables', 'floor', 'bathroom', 'restroom', 'wiped', 'wipe'],
-            'billing' => ['charge', 'charged', 'bill', 'price', 'cost', 'expensive', 'overcharged', 'payment', 'paid'],
-            'fulfillment_error' => ['wrong', 'incorrect', 'missing', 'forgot', 'didn\'t receive', 'did not receive', 'sent wrong'],
+            'wait_time' => [
+                'wait', 'waited', 'waiting', 'delay', 'delayed', 'slow', 'time', 'late', 'appointment', 
+                'long', 'minutes', 'hours', 'hour', 'minute', 'took too long', 'took forever', 
+                'slow service', 'slow delivery', 'delayed delivery', 'late delivery', 'arrived late'
+            ],
+            'food_quality' => [
+                'cold', 'hot', 'taste', 'quality', 'wrong', 'item', 'food', 'meal', 'order', 'delivered', 
+                'burnt', 'overcooked', 'undercooked', 'spoiled', 'bad food', 'tasteless', 'bland',
+                'dry', 'soggy', 'stale', 'fresh', 'quality', 'tasty', 'delicious', 'awful', 'terrible',
+                'disgusting', 'inedible', 'raw', 'frozen', 'warm', 'lukewarm', 'temperature'
+            ],
+            'service' => [
+                'rude', 'staff', 'service', 'attitude', 'unfriendly', 'impolite', 'cashier', 'server', 
+                'waiter', 'employee', 'worker', 'person', 'unprofessional', 'disrespectful', 'ignored',
+                'helpful', 'friendly', 'polite', 'courteous', 'professional', 'customer service'
+            ],
+            'cleanliness' => [
+                'dirty', 'clean', 'messy', 'table', 'tables', 'floor', 'bathroom', 'restroom', 
+                'wiped', 'wipe', 'hygiene', 'sanitary', 'unsanitary', 'filthy', 'sticky', 'greasy',
+                'trash', 'garbage', 'dishes', 'utensils', 'napkins', 'tissue', 'soap', 'toilet'
+            ],
+            'billing' => [
+                'charge', 'charged', 'bill', 'price', 'cost', 'expensive', 'overcharged', 'payment', 
+                'paid', 'receipt', 'invoice', 'check', 'total', 'amount', 'fee', 'fees', 'refund',
+                'money', 'dollar', 'costly', 'cheap', 'affordable', 'pricing'
+            ],
+            'fulfillment_error' => [
+                'wrong', 'incorrect', 'missing', 'forgot', 'didn\'t receive', 'did not receive', 
+                'sent wrong', 'wrong order', 'missing item', 'forgot to', 'didn\'t get', 'did not get',
+                'not included', 'left out', 'forgot my', 'missing my', 'wrong size', 'wrong color',
+                'substitute', 'replacement', 'exchange'
+            ],
         ];
 
-        // Count matches for each category
+        // Count matches for each category with word boundary matching for better accuracy
         $categoryScores = [];
         foreach ($categories as $category => $keywords) {
             $score = 0;
             foreach ($keywords as $keyword) {
-                if (stripos($text, $keyword) !== false) {
-                    $score++;
+                // Use word boundary matching for better accuracy
+                if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/i', $text)) {
+                    $score += 2; // Exact word match gets higher score
+                } elseif (stripos($text, $keyword) !== false) {
+                    $score += 1; // Partial match gets lower score
                 }
             }
             if ($score > 0) {
@@ -462,7 +511,13 @@ Respond ONLY with your conversational message (1-2 smooth sentences), nothing el
         // Return category with highest score
         if (!empty($categoryScores)) {
             arsort($categoryScores);
-            return array_key_first($categoryScores);
+            $topCategory = array_key_first($categoryScores);
+            $topScore = $categoryScores[$topCategory];
+            
+            // Only return specific category if score is significant (at least 2 points)
+            if ($topScore >= 2) {
+                return $topCategory;
+            }
         }
 
         return 'general';
@@ -492,9 +547,11 @@ Respond ONLY with your conversational message (1-2 smooth sentences), nothing el
 
     protected function getSystemPrompt(): string
     {
-        return "You are a warm, empathetic customer service representative helping a customer who had a negative experience.
+        return "You are a warm, empathetic customer service representative helping a customer.
 
-YOUR GOAL: Turn their negative experience into a positive one through genuine care and quick solutions.
+YOUR GOAL: 
+- For negative feedback (1-3 stars): Turn their negative experience into a positive one through genuine care and quick solutions
+- For neutral feedback (4 stars): Thank them and gently encourage them to share their experience
 
 CONVERSATION STYLE:
 - Be warm, friendly, and conversational (like talking to a friend)
@@ -519,10 +576,13 @@ For CLEANLINESS issues (dirty tables, messy):
 For FULFILLMENT ERRORS (wrong item, missing items):
 → 'Sorry about that! We'll send the correct item today — no return needed. Thank you for pointing this out so we can improve.'
 
+For 4 STAR FEEDBACK (neutral/positive):
+→ 'Thank you for your feedback! We're glad you had a good experience. If you're comfortable, we'd love it if you could share your experience on Google — it really helps us!'
+
 IMPORTANT:
 - Always acknowledge their specific issue
-- Offer a concrete solution
-- End with a question to keep the conversation going
+- For 1-3 stars: Offer a concrete solution and end with a question
+- For 4 stars: Thank them and gently ask for a review
 - Be warm and genuine, not generic
 - Progressively improve their sentiment through caring responses
 

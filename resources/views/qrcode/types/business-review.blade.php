@@ -69,10 +69,12 @@
                 renderMessages() {
                     return this.messages.map((msg, index) => {
                         const isUser = msg.role === 'user';
+                        // Clean the message content - remove leading/trailing whitespace and ensure proper formatting
+                        const cleanContent = (msg.content || '').trim().replace(/\n{3,}/g, '\n\n');
                         return `
                             <div style="display: flex; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-                                <div style="max-width: 80%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; white-space: pre-wrap; word-wrap: break-word; text-align: left; ${isUser ? 'background: #2563eb; color: white;' : 'background: white; color: #111827; border: 1px solid #e5e7eb;'}">
-                                    ${this.escapeHtml(msg.content)}
+                                <div style="max-width: 80%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; word-wrap: break-word; overflow-wrap: break-word; text-align: left; line-height: 1.5; ${isUser ? 'background: #2563eb; color: white;' : 'background: white; color: #111827; border: 1px solid #e5e7eb;'}">
+                                    ${this.escapeHtml(cleanContent)}
                                 </div>
                             </div>
                         `;

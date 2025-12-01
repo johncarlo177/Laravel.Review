@@ -34,6 +34,13 @@
         }
 
         createFloatingButton() {
+            // Check if button already exists
+            const existingButton = document.getElementById('ai-recovery-widget-button');
+            if (existingButton) {
+                console.log('AI Recovery Widget: Button already exists');
+                return;
+            }
+            
             const button = document.createElement('div');
             button.id = 'ai-recovery-widget-button';
             button.innerHTML = `
@@ -43,11 +50,13 @@
             `;
             
             button.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 9998;
-                cursor: pointer;
+                position: fixed !important;
+                bottom: 20px !important;
+                right: 20px !important;
+                z-index: 9998 !important;
+                cursor: pointer !important;
+                display: block !important;
+                visibility: visible !important;
             `;
             
             // Mobile responsive styles
@@ -77,7 +86,21 @@
                 this.querySelector('div').style.transform = 'scale(1)';
             });
             
-            document.body.appendChild(button);
+            // Append to body
+            if (document.body) {
+                document.body.appendChild(button);
+                console.log('AI Recovery Widget: Button created and added to page');
+            } else {
+                // Wait for body to be available
+                const observer = new MutationObserver((mutations, obs) => {
+                    if (document.body) {
+                        document.body.appendChild(button);
+                        console.log('AI Recovery Widget: Button created and added to page (delayed)');
+                        obs.disconnect();
+                    }
+                });
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+            }
         }
 
         toggleChat() {
@@ -143,7 +166,7 @@
                     ${this.shouldRequestReview ? this.renderReviewRequest() : ''}
                     <div style="display: flex; gap: ${isMobile ? '0.375rem' : '0.5rem'}; padding: ${isMobile ? '0.5rem' : '0.75rem'}; border-top: 1px solid #e5e7eb; background: white; border-radius: 0 0 ${isMobile ? '0.75rem' : '1rem'} ${isMobile ? '0.75rem' : '1rem'};">
                         <input type="text" id="ai-widget-input" placeholder="Type your message..." style="flex: 1; padding: ${isMobile ? '0.625rem 0.5rem' : '0.5rem 0.75rem'}; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: ${isMobile ? '0.875rem' : '0.875rem'}; outline: none; -webkit-appearance: none; -moz-appearance: none; appearance: none;" ${this.isResolved ? 'disabled' : ''} />
-                        <button id="ai-widget-send" style="padding: ${isMobile ? '0.625rem 1rem' : '0.5rem 1rem'}; background: #2563eb; color: white; border: none; border-radius: 0.5rem; font-weight: 500; cursor: pointer; font-size: ${isMobile ? '0.875rem' : '0.875rem'}; white-space: nowrap; ${this.isResolved ? 'opacity: 0.5; cursor: not-allowed;' : ''}">Send</button>
+                        <button id="ai-widget-send" style="padding: ${isMobile ? '0.625rem 1rem' : '0.5rem 1rem'}; background: #2563eb; color: white; border: none; border-radius: 0.5rem; font-weight: 500; cursor: pointer; font-size: ${isMobile ? '0.875rem' : '0.875rem'}; ${this.isResolved ? 'opacity: 0.5; cursor: not-allowed;' : ''}">Send</button>
                     </div>
                 </div>
             `;
@@ -166,10 +189,12 @@
             
             return this.messages.map((msg, index) => {
                 const isUser = msg.role === 'user';
+                // Clean the message content - remove leading/trailing whitespace and ensure proper formatting
+                const cleanContent = (msg.content || '').trim().replace(/\n{3,}/g, '\n\n');
                 return `
                     <div style="display: flex; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-                        <div style="max-width: ${isMobile ? '85%' : '75%'}; padding: ${isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem'}; border-radius: 0.5rem; font-size: ${isMobile ? '0.8125rem' : '0.875rem'}; white-space: pre-wrap; word-wrap: break-word; text-align: left; line-height: 1.5; ${isUser ? 'background: #2563eb; color: white;' : 'background: white; color: #111827; border: 1px solid #e5e7eb;'}">
-                            ${this.escapeHtml(msg.content)}
+                        <div style="max-width: ${isMobile ? '85%' : '75%'}; padding: ${isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem'}; border-radius: 0.5rem; font-size: ${isMobile ? '0.8125rem' : '0.875rem'}; word-wrap: break-word; overflow-wrap: break-word; text-align: left; line-height: 1.5; ${isUser ? 'background: #2563eb; color: white;' : 'background: white; color: #111827; border: 1px solid #e5e7eb;'}">
+                            ${this.escapeHtml(cleanContent)}
                         </div>
                     </div>
                 `;
@@ -365,7 +390,8 @@
                 }
             }
 
-            // If no session data, try to load from server
+            // If no session data, try to load from server (only if user is authenticated)
+            // Don't fail if user is not authenticated - widget should still be visible
             try {
                 const response = await fetch('/feedbacks/recovery/last', {
                     method: 'GET',
@@ -393,9 +419,13 @@
                             messages: this.messages
                         }));
                     }
+                } else if (response.status === 401 || response.status === 404) {
+                    // User not authenticated or no conversation - this is fine, widget still shows
+                    console.log('No active conversation - widget will show empty state');
                 }
             } catch (error) {
-                console.log('No active conversation found or user not authenticated');
+                // Network error or other issue - widget should still be visible
+                console.log('Could not load conversation - widget will show empty state');
             }
         }
 
@@ -420,13 +450,22 @@
     }
 
     // Initialize widget when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+    function initializeWidget() {
+        // Only initialize if not already initialized
+        if (!window.AIRecoveryWidget) {
             window.AIRecoveryWidget = new AIRecoveryWidget();
-        });
-    } else {
-        window.AIRecoveryWidget = new AIRecoveryWidget();
+        }
     }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWidget);
+    } else {
+        // DOM already loaded, initialize immediately
+        initializeWidget();
+    }
+    
+    // Also try to initialize after a short delay in case script loads late
+    setTimeout(initializeWidget, 500);
 
     // Add CSS animation for loading indicator
     if (!document.getElementById('ai-widget-styles')) {

@@ -41,4 +41,15 @@ return [
     'openai' => [
         'secret_key' => env('OPEN_AI_SECRET_KEY')
     ],
+
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'from_number' => env('TWILIO_FROM_NUMBER'),
+    ],
+
+    'admin' => [
+        'email' => env('ADMIN_EMAIL'),
+        'phone' => env('ADMIN_PHONE'),
+    ],
 ];

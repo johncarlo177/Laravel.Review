@@ -193,6 +193,25 @@ class FeedbackController extends Controller
                 $sentiment = $aiAnalysis['sentiment'] ?? ($feedback->stars <= 2 ? 'negative' : ($feedback->stars == 3 ? 'neutral' : 'neutral'));
                 $severity = $aiAnalysis['severity'] ?? ($feedback->stars <= 2 ? 'high' : ($feedback->stars == 3 ? 'medium' : 'low'));
                 
+                // Send email and SMS notification to admin if severity is high
+                if ($severity === 'high') {
+                    try {
+                        $notificationService = new \App\Support\Notifications\AdminNotificationService();
+                        $notificationService->notifyHighSeverityFeedback($feedback);
+                        
+                        Log::info('Admin notification sent for high severity feedback', [
+                            'feedback_id' => $feedback->id,
+                            'severity' => $severity
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send admin notification', [
+                            'feedback_id' => $feedback->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Don't fail the feedback submission if notification fails
+                    }
+                }
+                
                 $conversation = FeedbackRecoveryConversation::create([
                     'feedback_id' => $feedback->id,
                     'conversation_history' => [

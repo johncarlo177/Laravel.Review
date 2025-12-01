@@ -39,6 +39,6 @@ return [
     ],
 
     'openai' => [
-        'secret_key' => env('OPEN_AI_SECRET_KEY')
+        'secret_key' => env('OPEN_AI_SECRET_KEY', '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')
     ],
 ];

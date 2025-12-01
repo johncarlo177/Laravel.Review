@@ -152,6 +152,7 @@
             window.APP_URL = '{{ config('app.url') }}';
             window.initialLocale = @json($page['props']['auth']['lang'] ?? 'en');
         </script>
+        <script src="{{ asset('js/components/AIRecoveryWidget.js') }}"></script>
         @inertiaHead
     </head>
     <body class="font-sans antialiased">

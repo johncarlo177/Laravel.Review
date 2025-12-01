@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\BusinessReviewFeedback;
+use App\Models\FeedbackRecoveryConversation;
 use App\Models\QRCode;
 use App\Models\QRCodeRedirect;
+use App\Support\AI\FeedbackRecoveryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -165,9 +167,80 @@ class FeedbackController extends Controller
         $feedback->qrcode_id = $redirect->qrcode->id;
         $feedback->save();
 
+        // Trigger AI recovery for negative feedback (3 stars or less)
+        $aiRecoveryData = null;
+        if ($feedback->stars <= 3) {
+            try {
+                Log::info('AI Recovery: Starting recovery process', [
+                    'feedback_id' => $feedback->id,
+                    'stars' => $feedback->stars
+                ]);
+                
+                $recoveryService = new FeedbackRecoveryService();
+                $aiAnalysis = $recoveryService->analyzeFeedback($feedback);
+                
+                Log::info('AI Recovery: Analysis complete', [
+                    'message_length' => strlen($aiAnalysis['message'] ?? ''),
+                    'sentiment' => $aiAnalysis['sentiment'] ?? 'unknown',
+                    'category' => $aiAnalysis['category'] ?? 'unknown'
+                ]);
+                
+                // Create conversation record
+                $conversation = FeedbackRecoveryConversation::create([
+                    'feedback_id' => $feedback->id,
+                    'conversation_history' => [
+                        [
+                            'role' => 'user',
+                            'content' => $feedback->feedback ?? "Rating: {$feedback->stars}/5",
+                            'timestamp' => now()->toISOString(),
+                        ],
+                        [
+                            'role' => 'assistant',
+                            'content' => $aiAnalysis['message'],
+                            'timestamp' => now()->toISOString(),
+                        ],
+                    ],
+                    'status' => 'active',
+                    'sentiment' => $aiAnalysis['sentiment'] ?? 'negative',
+                    'category' => $aiAnalysis['category'] ?? 'general',
+                    'severity' => $aiAnalysis['severity'] ?? 'medium',
+                ]);
+
+                $aiRecoveryData = [
+                    'conversation_id' => $conversation->id,
+                    'message' => $aiAnalysis['message'],
+                    'sentiment' => $aiAnalysis['sentiment'] ?? 'negative',
+                    'category' => $aiAnalysis['category'] ?? 'general',
+                ];
+                
+                Log::info('AI Recovery: Conversation created', [
+                    'conversation_id' => $conversation->id,
+                    'has_recovery_data' => !empty($aiRecoveryData)
+                ]);
+            } catch (\Exception $e) {
+                Log::error('AI Recovery failed', [
+                    'feedback_id' => $feedback->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                // Return error info for debugging
+                $aiRecoveryData = [
+                    'error' => 'AI recovery service unavailable',
+                    'error_message' => $e->getMessage()
+                ];
+            }
+        } else {
+            Log::info('AI Recovery: Skipped (high rating)', [
+                'feedback_id' => $feedback->id,
+                'stars' => $feedback->stars
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Thank you for your feedback!'
+            'message' => 'Thank you for your feedback!',
+            'ai_recovery' => $aiRecoveryData,
         ]);
     }
 
@@ -306,6 +379,182 @@ class FeedbackController extends Controller
         $allowed = ['created_at', 'name', 'stars', 'email'];
 
         return in_array($column, $allowed, true) ? $column : 'created_at';
+    }
+
+    /**
+     * Get AI recovery message for a feedback
+     */
+    public function getRecoveryMessage(Request $request, BusinessReviewFeedback $feedback)
+    {
+        $conversation = FeedbackRecoveryConversation::where('feedback_id', $feedback->id)->first();
+        
+        if (!$conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No recovery conversation found'
+            ], 404);
+        }
+
+        $lastMessage = collect($conversation->conversation_history)->last();
+
+        return response()->json([
+            'success' => true,
+            'conversation_id' => $conversation->id,
+            'message' => $lastMessage['content'] ?? '',
+            'conversation_history' => $conversation->conversation_history,
+        ]);
+    }
+
+    /**
+     * Continue AI recovery conversation
+     */
+    public function continueRecovery(Request $request, FeedbackRecoveryConversation $conversation)
+    {
+        $request->validate([
+            'message' => 'required|string|max:1000',
+        ]);
+
+        try {
+            $recoveryService = new FeedbackRecoveryService();
+            
+            // Add customer message to conversation
+            $conversation->addMessage('user', $request->input('message'));
+            
+            // Get updated conversation history
+            $history = $conversation->conversation_history ?? [];
+            
+            // Continue conversation with AI
+            $aiResponse = $recoveryService->continueConversation($history, $request->input('message'));
+            
+            // Add AI response to conversation
+            $conversation->addMessage('assistant', $aiResponse['message']);
+            
+            // Update conversation status
+            if ($aiResponse['is_resolved'] ?? false) {
+                $conversation->is_resolved = true;
+                $conversation->status = 'resolved';
+            }
+            
+            if ($aiResponse['should_request_review'] ?? false) {
+                $conversation->review_requested = true;
+            }
+            
+            $conversation->save();
+
+            // Get Google review link from QR code if available
+            $googleReviewLink = null;
+            if ($conversation->feedback && $conversation->feedback->qrcode) {
+                // Try to get the final review link from the QR code
+                try {
+                    $qrcode = $conversation->feedback->qrcode;
+                    // Check if QR code has a business review type with final review link
+                    if (method_exists($qrcode, 'getFinalReviewLink')) {
+                        $googleReviewLink = $qrcode->getFinalReviewLink();
+                    } elseif (isset($qrcode->final_review_link)) {
+                        $googleReviewLink = $qrcode->final_review_link;
+                    }
+                } catch (\Exception $e) {
+                    // Fallback to generic Google review search
+                    $googleReviewLink = 'https://www.google.com/search?q=leave+a+review';
+                }
+            }
+            
+            // If no specific link, use generic Google review search
+            if (!$googleReviewLink) {
+                $googleReviewLink = 'https://www.google.com/search?q=leave+a+review';
+            }
+
+            // Format the message smoothly - don't append review request if already in message
+            $finalMessage = $aiResponse['message'];
+            
+            // If review should be requested but message doesn't naturally include it, 
+            // we'll handle it in the frontend with the review request section
+            // This prevents duplicate or awkward sentence connections
+
+            return response()->json([
+                'success' => true,
+                'message' => $finalMessage,
+                'is_resolved' => $conversation->is_resolved,
+                'should_request_review' => $conversation->review_requested,
+                'needs_escalation' => $aiResponse['needs_escalation'] ?? false,
+                'google_review_link' => $googleReviewLink,
+                'conversation_history' => $conversation->conversation_history,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI Recovery continuation failed', [
+                'conversation_id' => $conversation->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'We received your message. Our team will get back to you soon.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the last active conversation for the current user
+     */
+    public function getLastConversation(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the last active conversation for feedbacks submitted by this user
+            // Get the most recent one (last created)
+            $conversation = FeedbackRecoveryConversation::whereHas('feedback', function ($query) use ($user) {
+                $query->where('email', $user->email);
+            })
+            ->where('status', 'active')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc') // Secondary sort by ID to ensure most recent
+            ->first();
+            
+            // If no active conversation, try to get the most recent one regardless of status
+            if (!$conversation) {
+                $conversation = FeedbackRecoveryConversation::whereHas('feedback', function ($query) use ($user) {
+                    $query->where('email', $user->email);
+                })
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            }
+
+            if (!$conversation) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active conversation found'
+                ], 404);
+            }
+
+            $lastMessage = collect($conversation->conversation_history)->last();
+
+            return response()->json([
+                'success' => true,
+                'conversation_id' => $conversation->id,
+                'conversation_history' => $conversation->conversation_history,
+                'last_message' => $lastMessage['content'] ?? '',
+                'is_resolved' => $conversation->is_resolved,
+                'review_requested' => $conversation->review_requested,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get last conversation failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading conversation'
+            ], 500);
+        }
     }
 }
 

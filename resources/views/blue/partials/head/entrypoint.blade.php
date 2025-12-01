@@ -39,5 +39,8 @@
 
 @include('blue.partials.head.dashboard-custom-code')
 
+{{-- AI Recovery Widget --}}
+<script src="{{ asset('js/components/AIRecoveryWidget.js') }}"></script>
+
 {{-- end of @section('head') --}}
 @show

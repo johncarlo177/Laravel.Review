@@ -30,6 +30,23 @@
 
     @include('blue.components.gdpr')
 
+    {{-- AI Recovery Widget --}}
+    <script>
+        // Ensure widget is initialized after page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof window.AIRecoveryWidget === 'undefined') {
+                    console.log('AI Recovery Widget: Initializing...');
+                    // Widget should auto-initialize, but ensure it's available
+                }
+            });
+        } else {
+            if (typeof window.AIRecoveryWidget === 'undefined') {
+                console.log('AI Recovery Widget: Already loaded or initializing...');
+            }
+        }
+    </script>
+
 </body>
 
 </html>

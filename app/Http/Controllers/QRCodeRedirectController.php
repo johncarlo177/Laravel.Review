@@ -18,6 +18,7 @@ use App\Support\System\Traits\WriteLogs;
 use App\Support\QRCodeTypes\BaseDynamicType;
 use App\Support\QRCodeTypes\Interfaces\ShouldImmediatlyRedirectToDestination;
 use App\Support\Webhooks\QRCodeScanDispatcher;
+use App\Notifications\QRCodeScanSurveyNotification;
 
 class QRCodeRedirectController extends Controller
 {
@@ -96,10 +97,11 @@ class QRCodeRedirectController extends Controller
 
         if (!$info->isBot()) {
             $this->collectScanDetails($redirect, $request);
+            $this->sendSurveyNotification($user);
         }
 
-
-        return $this->renderRedirect($redirect);
+        // Redirect to survey page
+        return redirect(config('app.url') . '/dyvihb');
     }
 
     protected function didReachAllowedQRCodeScanLimit($redirect)
@@ -172,6 +174,25 @@ class QRCodeRedirectController extends Controller
             Log::warning(sprintf(
                 'Could not save scan details for user agent %s, %s',
                 @$_SERVER['HTTP_USER_AGENT'],
+                $th->getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Send survey notification (email and SMS) to QR code owner
+     *
+     * @param User $user
+     * @return void
+     */
+    private function sendSurveyNotification(User $user)
+    {
+        try {
+            $user->notify(new QRCodeScanSurveyNotification());
+        } catch (Throwable $th) {
+            Log::warning(sprintf(
+                'Could not send survey notification to user %s, %s',
+                $user->email ?? 'unknown',
                 $th->getMessage()
             ));
         }

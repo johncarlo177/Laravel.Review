@@ -73,12 +73,24 @@ class AdminNotificationService
 
     /**
      * Send SMS notification to admin via Twilio
+     * FROM: Customer's phone number (from feedback form)
+     * TO: Admin phone number
      */
     protected function sendSMS($feedback): bool
     {
         try {
             if (empty($this->twilioAccountSid) || empty($this->twilioAuthToken)) {
                 Log::warning('Twilio credentials not configured', [
+                    'feedback_id' => $feedback->id
+                ]);
+                return false;
+            }
+
+            // Get customer's phone number from feedback
+            $customerPhone = $this->formatPhoneNumber($feedback->mobile ?? '');
+            
+            if (empty($customerPhone)) {
+                Log::warning('Customer phone number not provided in feedback', [
                     'feedback_id' => $feedback->id
                 ]);
                 return false;
@@ -97,38 +109,82 @@ class AdminNotificationService
             // Twilio API endpoint
             $url = "https://api.twilio.com/2010-04-01/Accounts/{$this->twilioAccountSid}/Messages.json";
 
-            // If no from_number is configured, try to get the first available number from the account
-            if (empty($this->twilioFromNumber)) {
-                $this->twilioFromNumber = $this->getTwilioPhoneNumber();
-                
-                if (empty($this->twilioFromNumber)) {
-                    Log::error('Twilio from_number not configured and could not fetch from account. Please set TWILIO_FROM_NUMBER in .env');
-                    return false;
-                }
+            // Normalize phone numbers for comparison (remove +, spaces, dashes)
+            $normalizePhone = function($phone) {
+                return preg_replace('/[^0-9]/', '', $phone);
+            };
+            
+            $fromNormalized = $normalizePhone($customerPhone);
+            $toNormalized = $normalizePhone($this->adminPhone);
+            
+            // Ensure From and To are different
+            if ($fromNormalized === $toNormalized) {
+                Log::error('Customer phone and admin phone cannot be the same', [
+                    'customer_phone' => $customerPhone,
+                    'admin_phone' => $this->adminPhone,
+                    'feedback_id' => $feedback->id
+                ]);
+                return false;
             }
+
+            // Send SMS FROM customer's phone number TO admin phone number
+            Log::info('Sending SMS via Twilio', [
+                'from' => $customerPhone,  // Customer's phone from form input
+                'to' => $this->adminPhone,  // Admin phone number
+                'direction' => 'outbound-api',  // This will show as "Incoming" in Twilio logs when sent FROM customer number
+                'feedback_id' => $feedback->id,
+                'message_preview' => substr($message, 0, 50)
+            ]);
 
             $response = Http::withBasicAuth($this->twilioAccountSid, $this->twilioAuthToken)
                 ->asForm()
                 ->post($url, [
-                    'From' => $this->twilioFromNumber,
-                    'To' => $this->adminPhone,
+                    'From' => $customerPhone,  // Customer's phone number (from form)
+                    'To' => $this->adminPhone,  // Admin phone number
                     'Body' => $message
                 ]);
 
             if ($response->successful()) {
-                Log::info('Admin notification SMS sent', [
-                    'admin_phone' => $this->adminPhone,
+                $responseData = $response->json();
+                Log::info('Admin notification SMS sent successfully', [
+                    'from' => $customerPhone,
+                    'to' => $this->adminPhone,
                     'feedback_id' => $feedback->id,
-                    'twilio_sid' => $response->json('sid')
+                    'twilio_sid' => $responseData['sid'] ?? null,
+                    'status' => $responseData['status'] ?? null,
+                    'direction' => $responseData['direction'] ?? null
                 ]);
 
                 return true;
             } else {
+                $errorData = $response->json();
+                $errorMessage = $errorData['message'] ?? $response->body();
+                $errorCode = $errorData['code'] ?? 'unknown';
+                
                 Log::error('Failed to send SMS via Twilio', [
                     'status' => $response->status(),
+                    'error_code' => $errorCode,
+                    'error_message' => $errorMessage,
+                    'from' => $customerPhone,
+                    'to' => $this->adminPhone,
                     'body' => $response->body(),
                     'feedback_id' => $feedback->id
                 ]);
+
+                // Log specific error for debugging
+                if ($errorCode == 21266 || strpos($errorMessage, 'cannot be the same') !== false) {
+                    Log::error('Twilio error 21266: Customer phone and admin phone are the same or invalid', [
+                        'customer_phone' => $customerPhone,
+                        'admin_phone' => $this->adminPhone,
+                        'feedback_id' => $feedback->id
+                    ]);
+                } elseif ($errorCode == 21610 || strpos($errorMessage, 'not a valid') !== false) {
+                    Log::error('Twilio error: Customer phone number is not valid or not verified', [
+                        'customer_phone' => $customerPhone,
+                        'error_message' => $errorMessage,
+                        'feedback_id' => $feedback->id
+                    ]);
+                }
 
                 return false;
             }
@@ -144,8 +200,9 @@ class AdminNotificationService
 
     /**
      * Get the first available Twilio phone number from the account
+     * @param string|null $excludeNumber Phone number to exclude (e.g., admin phone)
      */
-    protected function getTwilioPhoneNumber(): ?string
+    protected function getTwilioPhoneNumber(?string $excludeNumber = null): ?string
     {
         try {
             $url = "https://api.twilio.com/2010-04-01/Accounts/{$this->twilioAccountSid}/IncomingPhoneNumbers.json";
@@ -156,8 +213,32 @@ class AdminNotificationService
             if ($response->successful()) {
                 $data = $response->json();
                 if (isset($data['incoming_phone_numbers']) && count($data['incoming_phone_numbers']) > 0) {
+                    $normalizePhone = function($phone) {
+                        return preg_replace('/[^0-9]/', '', $phone);
+                    };
+                    
+                    $excludeNormalized = $excludeNumber ? $normalizePhone($excludeNumber) : null;
+                    
+                    // Find first number that's different from excludeNumber
+                    foreach ($data['incoming_phone_numbers'] as $phoneData) {
+                        $phoneNumber = $phoneData['phone_number'];
+                        $phoneNormalized = $normalizePhone($phoneNumber);
+                        
+                        if ($excludeNormalized === null || $phoneNormalized !== $excludeNormalized) {
+                            Log::info('Fetched Twilio phone number from account', [
+                                'phone' => $phoneNumber,
+                                'excluded' => $excludeNumber
+                            ]);
+                            return $phoneNumber;
+                        }
+                    }
+                    
+                    // If all numbers match excludeNumber, return the first one anyway (will be caught by validation)
                     $phoneNumber = $data['incoming_phone_numbers'][0]['phone_number'];
-                    Log::info('Fetched Twilio phone number from account', ['phone' => $phoneNumber]);
+                    Log::warning('All Twilio numbers match excluded number', [
+                        'phone' => $phoneNumber,
+                        'excluded' => $excludeNumber
+                    ]);
                     return $phoneNumber;
                 }
             }
@@ -168,6 +249,32 @@ class AdminNotificationService
             Log::error('Failed to fetch Twilio phone number', ['error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Format phone number to E.164 format for Twilio
+     * @param string $phone Raw phone number input
+     * @return string Formatted phone number (e.g., +18777804236)
+     */
+    protected function formatPhoneNumber(string $phone): string
+    {
+        if (empty($phone)) {
+            return '';
+        }
+
+        // Remove all non-digit characters except +
+        $phone = preg_replace('/[^\d+]/', '', $phone);
+        
+        // If it doesn't start with +, assume US number and add +1
+        if (!str_starts_with($phone, '+')) {
+            // Remove leading 1 if present
+            if (str_starts_with($phone, '1') && strlen($phone) == 11) {
+                $phone = substr($phone, 1);
+            }
+            $phone = '+1' . $phone;
+        }
+
+        return $phone;
     }
 }
 

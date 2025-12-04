@@ -3,6 +3,7 @@
 namespace App\Support\AI;
 
 use App\Models\BusinessReviewFeedback;
+use App\Support\AI\CategoryDetectionService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -10,10 +11,12 @@ class FeedbackRecoveryService
 {
     protected $apiKey;
     protected $baseUrl = 'https://api.openai.com/v1';
+    protected CategoryDetectionService $categoryDetectionService;
 
-    public function __construct()
+    public function __construct(CategoryDetectionService $categoryDetectionService = null)
     {
         $this->apiKey = config('services.openai.secret_key');
+        $this->categoryDetectionService = $categoryDetectionService ?? new CategoryDetectionService();
         
         if (empty($this->apiKey)) {
             Log::warning('OpenAI API key not configured. Please set OPEN_AI_SECRET_KEY in your .env file.');
@@ -29,8 +32,8 @@ class FeedbackRecoveryService
         $feedbackText = $feedback->feedback ?? '';
         $stars = $feedback->stars;
         
-        // Detect category from feedback text keywords
-        $detectedCategory = $this->detectCategory($feedbackText);
+        // Detect category from feedback text using comprehensive category detection
+        $detectedCategory = $this->categoryDetectionService->detectCategory($feedbackText);
         
         // Determine sentiment and severity based on star rating
         $detectedSentiment = $this->detectSentimentFromStars($stars);
@@ -431,7 +434,7 @@ Respond ONLY with your conversational message (1-2 smooth sentences), nothing el
         
         return [
             'sentiment' => $sentiment,
-            'category' => $this->detectCategory($content),
+            'category' => $this->categoryDetectionService->detectCategory($content),
             'severity' => $this->detectSeverity($content),
         ];
     }
@@ -451,77 +454,6 @@ Respond ONLY with your conversational message (1-2 smooth sentences), nothing el
         return 'neutral';
     }
 
-    protected function detectCategory(string $text): string
-    {
-        $text = strtolower(trim($text));
-        
-        // Enhanced category detection with more specific keywords
-        $categories = [
-            'wait_time' => [
-                'wait', 'waited', 'waiting', 'delay', 'delayed', 'slow', 'time', 'late', 'appointment', 
-                'long', 'minutes', 'hours', 'hour', 'minute', 'took too long', 'took forever', 
-                'slow service', 'slow delivery', 'delayed delivery', 'late delivery', 'arrived late'
-            ],
-            'food_quality' => [
-                'cold', 'hot', 'taste', 'quality', 'wrong', 'item', 'food', 'meal', 'order', 'delivered', 
-                'burnt', 'overcooked', 'undercooked', 'spoiled', 'bad food', 'tasteless', 'bland',
-                'dry', 'soggy', 'stale', 'fresh', 'quality', 'tasty', 'delicious', 'awful', 'terrible',
-                'disgusting', 'inedible', 'raw', 'frozen', 'warm', 'lukewarm', 'temperature'
-            ],
-            'service' => [
-                'rude', 'staff', 'service', 'attitude', 'unfriendly', 'impolite', 'cashier', 'server', 
-                'waiter', 'employee', 'worker', 'person', 'unprofessional', 'disrespectful', 'ignored',
-                'helpful', 'friendly', 'polite', 'courteous', 'professional', 'customer service'
-            ],
-            'cleanliness' => [
-                'dirty', 'clean', 'messy', 'table', 'tables', 'floor', 'bathroom', 'restroom', 
-                'wiped', 'wipe', 'hygiene', 'sanitary', 'unsanitary', 'filthy', 'sticky', 'greasy',
-                'trash', 'garbage', 'dishes', 'utensils', 'napkins', 'tissue', 'soap', 'toilet'
-            ],
-            'billing' => [
-                'charge', 'charged', 'bill', 'price', 'cost', 'expensive', 'overcharged', 'payment', 
-                'paid', 'receipt', 'invoice', 'check', 'total', 'amount', 'fee', 'fees', 'refund',
-                'money', 'dollar', 'costly', 'cheap', 'affordable', 'pricing'
-            ],
-            'fulfillment_error' => [
-                'wrong', 'incorrect', 'missing', 'forgot', 'didn\'t receive', 'did not receive', 
-                'sent wrong', 'wrong order', 'missing item', 'forgot to', 'didn\'t get', 'did not get',
-                'not included', 'left out', 'forgot my', 'missing my', 'wrong size', 'wrong color',
-                'substitute', 'replacement', 'exchange'
-            ],
-        ];
-
-        // Count matches for each category with word boundary matching for better accuracy
-        $categoryScores = [];
-        foreach ($categories as $category => $keywords) {
-            $score = 0;
-            foreach ($keywords as $keyword) {
-                // Use word boundary matching for better accuracy
-                if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/i', $text)) {
-                    $score += 2; // Exact word match gets higher score
-                } elseif (stripos($text, $keyword) !== false) {
-                    $score += 1; // Partial match gets lower score
-                }
-            }
-            if ($score > 0) {
-                $categoryScores[$category] = $score;
-            }
-        }
-
-        // Return category with highest score
-        if (!empty($categoryScores)) {
-            arsort($categoryScores);
-            $topCategory = array_key_first($categoryScores);
-            $topScore = $categoryScores[$topCategory];
-            
-            // Only return specific category if score is significant (at least 2 points)
-            if ($topScore >= 2) {
-                return $topCategory;
-            }
-        }
-
-        return 'general';
-    }
 
     protected function detectSeverity(string $text): string
     {

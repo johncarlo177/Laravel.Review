@@ -28,19 +28,46 @@ import {
   Repeat,
   RotateCcw,
   Scale,
-  Calculator
+  Calculator,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePage, router } from '@inertiajs/react';
 
 // --- Components ---
 const Navbar = () => {
+  console.log('Navbar');
   const [isOpen, setIsOpen] = useState(false);
+  const { auth } = usePage().props as any;
+  const isAuthenticated = auth?.user !== null && auth?.user !== undefined;
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Clear authentication data from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth:token');
+      localStorage.removeItem('auth:user');
+      // Also clear from sessionStorage just in case
+      sessionStorage.removeItem('auth:token');
+      sessionStorage.removeItem('auth:user');
+      
+      // Clear the token cookie that might be used for authentication
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    
+    // Force a full page reload to ensure fresh auth state
+    // Use the logout route which handles both Auth0 and standard logout
+    // The Auth0Controller will check if Auth0 is enabled and handle accordingly
+    // Adding a timestamp to prevent caching
+    window.location.href = '/auth0/logout?' + new Date().getTime();
+  };
 
   return (
     <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
             <div className="bg-blue-600 p-2 rounded-lg">
               <ShieldCheck className="h-6 w-6 text-white" />
             </div>
@@ -54,9 +81,37 @@ const Navbar = () => {
             {/* NEW LINK for Recovery Calculator */}
             <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
             <a href="#pricing" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-semibold transition shadow-lg shadow-blue-600/20">
-              Get Demo
-            </button>
+            {isAuthenticated ? (
+              <>
+                <button 
+                  onClick={() => window.location.href = '/dashboard'}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
+                >
+                  Dashboard
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => window.location.href = '/account/login'}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={() => window.location.href = '/account/sign-up'}
+                  className="bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
+                >
+                  Register
+                </button>
+              </>
+            )}
           </div>
           <div className="md:hidden flex items-center">
             <button onClick={() => setIsOpen(!isOpen)} className="text-slate-600 hover:text-slate-900">
@@ -81,9 +136,37 @@ const Navbar = () => {
               {/* NEW MOBILE LINK for Recovery Calculator */}
               <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
               <a href="#pricing" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
-              <button className="w-full mt-4 bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold">
-                Get Demo
-              </button>
+              {isAuthenticated ? (
+                <>
+                  <button 
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                  >
+                    Dashboard
+                  </button>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full mt-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => window.location.href = '/account/login'}
+                    className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={() => window.location.href = '/account/sign-up'}
+                    className="w-full mt-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                  >
+                    Register
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}

@@ -20,6 +20,18 @@ class Auth0Controller extends Controller
 
     public function logout()
     {
+        // Clear the authentication cookie if it exists
+        cookie()->queue(cookie()->forget('token'));
+        
+        // If Auth0 is not enabled, just redirect to home
+        if (!$this->auth0->isEnabled()) {
+            return redirect('/')->withHeaders([
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0'
+            ]);
+        }
+        
         return $this->auth0->redirectToAuth0Logout();
     }
 

@@ -7,9 +7,11 @@ const appName = (import.meta as any).env?.VITE_APP_NAME || 'Review';
 
 // Import pages
 import FeedbacksIndex from './pages/feedbacks/index';
+import HomePage from './pages/home/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
+    'home/index': HomePage,
 };
 
 createInertiaApp({

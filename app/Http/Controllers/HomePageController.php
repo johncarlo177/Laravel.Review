@@ -7,6 +7,7 @@ use App\Plugins\PluginManager;
 use App\Repositories\TranslationManager;
 use App\Support\ContentManager;
 use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
 
 class HomePageController extends Controller
 {
@@ -33,7 +34,8 @@ class HomePageController extends Controller
             return redirect(url('/account/login'));
         }
 
-        return $this->renderHomePage();
+        // Return Inertia React page instead of Blade view
+        return Inertia::render('home/index');
     }
 
     protected function makeHomePage()

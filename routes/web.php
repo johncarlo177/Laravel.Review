@@ -512,7 +512,6 @@ Route::get(
 Route::get('/invoice/{uuid}', [InvoiceController::class, 'viewInvoice']);
 
 Route::get('/feedbacks', [FeedbackController::class, 'index'])->name('feedbacks.index');
-Route::post('/dyvihb', [FeedbackController::class, 'store'])->name('dyvihb.store');
 Route::get('/feedbacks/{feedback}/recovery', [FeedbackController::class, 'getRecoveryMessage'])->name('feedbacks.recovery');
 Route::post('/feedbacks/recovery/{conversation}/continue', [FeedbackController::class, 'continueRecovery'])->name('feedbacks.recovery.continue');
 Route::get('/feedbacks/recovery/last', [FeedbackController::class, 'getLastConversation'])->name('feedbacks.recovery.last');

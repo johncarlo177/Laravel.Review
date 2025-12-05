@@ -5,6 +5,8 @@
         window.__BUSINESS_REVIEW_STARS_BEFORE_REDIRECT__ = {{ $composer->starsBeforeRedirect() }};
 
         window.__BUSINESS_REVIEW_FINAL_URL__ = "{{ $composer->finalReviewLink() }}";
+        
+        window.__QRCODE_ROUTE_URL__ = "{{ $composer->getQRCode()->redirect->route }}";
     </script>
     <script>
         // AI Recovery Popup Handler - Inline version
@@ -282,8 +284,9 @@
                             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
                                              form.querySelector('input[name="_token"]')?.value || '';
                             
-                            console.log('AI Recovery: Sending request to /dyvihb');
-                            const response = await fetch('/dyvihb', {
+                            const qrcodeRouteUrl = window.__QRCODE_ROUTE_URL__ ;
+                            console.log('AI Recovery: Sending request to', qrcodeRouteUrl);
+                            const response = await fetch(qrcodeRouteUrl, {
                                 method: 'POST',
                                 headers: {
                                     'X-CSRF-TOKEN': csrfToken,
@@ -336,7 +339,8 @@
                         console.log('AI Recovery: High rating or invalid stars, submitting normally');
                         // For high ratings, let the form submit normally
                         form.removeEventListener('submit', arguments.callee);
-                        form.setAttribute('action', '/dyvihb');
+                        const qrcodeRouteUrl = window.__QRCODE_ROUTE_URL__ ;
+                        form.setAttribute('action', qrcodeRouteUrl);
                         form.submit();
                     }
                 }, true); // Use capture phase to run before other handlers

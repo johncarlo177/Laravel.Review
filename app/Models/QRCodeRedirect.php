@@ -26,11 +26,8 @@ class QRCodeRedirect extends Model
 
     public function getRouteAttribute()
     {
-        $domain = $this->getDomain();
-
-        $domainManager = new DomainManager;
-
-        return $domainManager->domainUrl($domain, sprintf('/%s', $this->slug));
+        // Use APP_URL from config instead of custom domain
+        return rtrim(config('app.url'), '/') . '/' . ltrim($this->slug, '/');
     }
 
     public function getDestinationAttribute($value)

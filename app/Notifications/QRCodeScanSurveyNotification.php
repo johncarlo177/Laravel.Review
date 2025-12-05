@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\QRCodeRedirect;
 use App\Support\Sms\Contracts\SendsSms;
 use App\Support\Sms\SmsChannel;
 use Illuminate\Bus\Queueable;
@@ -12,6 +13,18 @@ use Illuminate\Notifications\Notification;
 class QRCodeScanSurveyNotification extends Notification implements ShouldQueue, SendsSms
 {
     use Queueable;
+
+    protected QRCodeRedirect $redirect;
+
+    /**
+     * Create a new notification instance.
+     *
+     * @param QRCodeRedirect $redirect
+     */
+    public function __construct(QRCodeRedirect $redirect)
+    {
+        $this->redirect = $redirect;
+    }
 
     /**
      * Get the notification's delivery channels.
@@ -44,7 +57,8 @@ class QRCodeScanSurveyNotification extends Notification implements ShouldQueue, 
      */
     public function toMail($notifiable)
     {
-        $surveyUrl = config('app.url') . '/dyvihb';
+        // Use the QR code's dynamic route URL
+        $surveyUrl = $this->redirect->route;
         $message = "Thank you for calling iStorage! Please complete this survey to tell us about your experience. Text STOP to opt-out.\n\n{$surveyUrl}";
 
         return (new MailMessage)
@@ -60,7 +74,8 @@ class QRCodeScanSurveyNotification extends Notification implements ShouldQueue, 
      */
     public function toSms($notifiable): string
     {
-        $surveyUrl = config('app.url') . '/dyvihb';
+        // Use the QR code's dynamic route URL
+        $surveyUrl = $this->redirect->route;
         return "Thank you for calling iStorage! Please complete this survey to tell us about your experience. Text STOP to opt-out.\n\n{$surveyUrl}";
     }
 

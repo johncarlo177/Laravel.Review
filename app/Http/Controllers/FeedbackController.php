@@ -133,9 +133,6 @@ class FeedbackController extends Controller
         ]);
     }
 
-    /**
-     * Store feedback from /dyvihb form submission
-     */
     public function store(Request $request)
     {
         $request->validate([

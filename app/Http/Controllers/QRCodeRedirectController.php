@@ -97,17 +97,9 @@ class QRCodeRedirectController extends Controller
 
         if (!$info->isBot()) {
             $this->collectScanDetails($redirect, $request);
-            
-            // Only send notification and redirect if this is NOT the dyvihb page itself
-            // This prevents infinite redirect loops and allows direct access to /dyvihb
-            if ($redirect->slug !== 'dyvihb') {
-                $this->sendSurveyNotification($user);
-                // Redirect immediately to survey page
-                return redirect(config('app.url') . '/dyvihb');
-            }
         }
 
-        // Show the content for /dyvihb page when accessed directly
+        // Show the QR code content directly
         return $this->renderRedirect($redirect);
     }
 
@@ -190,12 +182,13 @@ class QRCodeRedirectController extends Controller
      * Send survey notification (email and SMS) to QR code owner
      *
      * @param User $user
+     * @param QRCodeRedirect $redirect
      * @return void
      */
-    private function sendSurveyNotification(User $user)
+    private function sendSurveyNotification(User $user, QRCodeRedirect $redirect)
     {
         try {
-            $user->notify(new QRCodeScanSurveyNotification());
+            $user->notify(new QRCodeScanSurveyNotification($redirect));
         } catch (Throwable $th) {
             Log::warning(sprintf(
                 'Could not send survey notification to user %s, %s',

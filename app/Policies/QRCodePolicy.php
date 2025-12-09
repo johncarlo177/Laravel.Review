@@ -99,17 +99,25 @@ class QRCodePolicy extends BasePolicy
     {
         if ($this->canListAll($user)) return true;
 
-        if (!(new QRCodeTypeManager())->isDynamic(request()->input('type'))) {
-            return $user->permitted('qrcode.store');
-        }
-
-        if (
-            $this->subscriptions->userDynamicQRCodesLimitReached($user, request()->input('type'))
-        ) {
+        // Check if user has the basic permission
+        if (!$user->permitted('qrcode.store')) {
+            $this->logDebug('QRCode store denied: User does not have qrcode.store permission');
+            $this->fail(t('You do not have permission to create QR codes.'));
             return false;
         }
 
-        return $user->permitted('qrcode.store');
+        // For dynamic QR codes, check if limit is reached
+        if ((new QRCodeTypeManager())->isDynamic(request()->input('type'))) {
+            if (
+                $this->subscriptions->userDynamicQRCodesLimitReached($user, request()->input('type'))
+            ) {
+                $this->logDebug('QRCode store denied: Dynamic QR code limit reached for type: %s', request()->input('type'));
+                $this->fail(t('You have reached your limit for creating dynamic QR codes. Please upgrade your plan.'));
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function update(User $user, QRCode $qrcode)

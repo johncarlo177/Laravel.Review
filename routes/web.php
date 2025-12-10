@@ -432,12 +432,20 @@ Route::get('/inertia-setup', function () {
 
 // Account routes using Inertia React components
 Route::get('/account/login', function () {
+    // Double check authentication and redirect if needed
+    if (auth('sanctum')->check()) {
+        return redirect('/dashboard');
+    }
     return Inertia::render('account/login');
-})->name('account.login');
+})->middleware('guest:sanctum')->name('account.login');
 
 Route::get('/account/sign-up', function () {
+    // Double check authentication and redirect if needed
+    if (auth('sanctum')->check()) {
+        return redirect('/dashboard');
+    }
     return Inertia::render('account/register');
-})->name('account.register');
+})->middleware('guest:sanctum')->name('account.register');
 
 // Dashboard route using Inertia React component
 Route::get('/dashboard', function () {

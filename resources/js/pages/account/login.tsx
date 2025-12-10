@@ -10,12 +10,29 @@ export default function LoginPage() {
   const { auth } = usePage().props as any;
   const isAuthenticated = auth?.user !== null && auth?.user !== undefined;
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (handles browser back button)
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.visit('/dashboard');
+      // Use window.location for immediate redirect to prevent page flash
+      window.location.href = '/dashboard';
     }
   }, [isAuthenticated]);
+
+  // Also check localStorage token as fallback
+  React.useEffect(() => {
+    const token = localStorage.getItem('auth:token');
+    if (token && !isAuthenticated) {
+      // Token exists but not authenticated yet, wait a bit for auth to sync
+      const timer = setTimeout(() => {
+        if (auth?.user) {
+          window.location.href = '/dashboard';
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (token && isAuthenticated) {
+      window.location.href = '/dashboard';
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -157,7 +157,7 @@ const DashboardPage = () => {
         id="sidebar"
         className={`${
           isMobileMenuOpen ? 'absolute' : 'hidden'
-        } lg:block lg:w-64 bg-white border-r border-gray-200 p-6 shadow-xl lg:shadow-none sticky top-0 h-screen z-10 overflow-y-auto`}
+        } lg:block lg:w-64 bg-white border-r border-gray-200 p-6 shadow-xl lg:shadow-none lg:fixed lg:top-0 lg:left-0 lg:h-screen z-10 overflow-y-auto`}
       >
         <div className="mb-8 flex items-center space-x-2">
           <div className="text-3xl text-blue-600">⚡</div>
@@ -237,7 +237,7 @@ const DashboardPage = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-grow p-4 sm:p-8">
+      <main className="flex-grow p-4 sm:p-8 lg:ml-64">
         {/* Dashboard Page */}
         {activePage === 'dashboard' && (
           <div id="dashboard" className="app-page">

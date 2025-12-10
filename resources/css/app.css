@@ -67,3 +67,12 @@ input:focus, select:focus {
     @apply outline-none ring-2 ring-blue-500 border-blue-500;
 }
 
+/* Dashboard Toggle Switch Styles */
+.toggle-switch-ui input:checked + span:before {
+    transform: translateX(1.5rem);
+}
+
+.toggle-switch-ui input:checked + span {
+    background-color: #2563eb;
+}
+

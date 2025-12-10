@@ -34,6 +34,7 @@ use App\Support\PaymentProcessors\PaymentProcessorManager;
 use App\Support\QRCodeTypes\ViewComposers\Components\QRCodeFavicon\FileServer as QRCodeFaviconFileServer;
 use App\Support\System\AdminHelper;
 use Dedoc\Scramble\Scramble;
+use Inertia\Inertia;
 
 Route::get('/speed-test', [BenchmarkController::class, 'showTime']);
 
@@ -428,6 +429,11 @@ Route::get('/inertia-setup', function () {
     
     return implode('', $output);
 })->name('install.inertia');
+
+// Dashboard route using Inertia React component
+Route::get('/dashboard', function () {
+    return Inertia::render('dashboard/index');
+})->name('dashboard');
 
 Route::get('/{frontend}', function () {
     return view('blue.pages.dashboard');

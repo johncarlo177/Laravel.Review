@@ -20,20 +20,20 @@ class RoleSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'super_admin' => true,
-                'home_page' => '/dashboard/qrcodes'
+                'home_page' => '/dashboard'
             ],
             [
                 'name' => 'Client',
-                'home_page' => '/dashboard/qrcodes',
+                'home_page' => '/dashboard',
                 'is_default_role_for_new_signup' => true
             ],
             [
                 'name' => 'Sub User',
-                'home_page' => '/dashboard/qrcodes',
+                'home_page' => '/dashboard',
             ],
             [
                 'name' => 'Reseller',
-                'home_page' => '/dashboard/qrcodes',
+                'home_page' => '/dashboard',
             ]
         ];
 

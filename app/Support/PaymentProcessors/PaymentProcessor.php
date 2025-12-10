@@ -83,7 +83,7 @@ abstract class PaymentProcessor
         if ($price == 0) {
 
             $link = $this->applyPaylinkFilter(
-                url('/dashboard/qrcodes'),
+                url('/dashboard'),
                 $subscription
             );
 

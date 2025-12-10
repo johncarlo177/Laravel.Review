@@ -51,8 +51,14 @@ class AccountController extends Controller
         $user = RegistrationManager::withInput($request->all())
             ->regsiter();
 
+        $token = $user->createToken('spa')->plainTextToken;
+
+        // Set the token cookie for authentication
+        cookie()->queue('token', 'Bearer ' . $token, 60 * 24 * 365); // 1 year
+
         return [
-            'token' => $user->createToken('spa')->plainTextToken
+            'token' => $token,
+            'user' => $this->getUser($user->id)
         ];
     }
 
@@ -92,8 +98,13 @@ class AccountController extends Controller
             $user->id
         );
 
+        $token = $user->createToken('spa')->plainTextToken;
+
+        // Set the token cookie for authentication
+        cookie()->queue('token', 'Bearer ' . $token, 60 * 24 * 365); // 1 year
+
         return [
-            'token' => $user->createToken('spa')->plainTextToken,
+            'token' => $token,
             'user' => $user
         ];
     }

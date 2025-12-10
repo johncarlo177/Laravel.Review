@@ -430,8 +430,20 @@ Route::get('/inertia-setup', function () {
     return implode('', $output);
 })->name('install.inertia');
 
+// Account routes using Inertia React components
+Route::get('/account/login', function () {
+    return Inertia::render('account/login');
+})->name('account.login');
+
+Route::get('/account/sign-up', function () {
+    return Inertia::render('account/register');
+})->name('account.register');
+
 // Dashboard route using Inertia React component
 Route::get('/dashboard', function () {
+    if (!auth('sanctum')->check()) {
+        return redirect('/account/login');
+    }
     return Inertia::render('dashboard/index');
 })->name('dashboard');
 

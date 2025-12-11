@@ -30,6 +30,25 @@ import {
   Brain,
   Search,
   Calendar,
+  ThumbsDown,
+  Handshake as HandshakeIcon,
+  Clock as ClockIcon,
+  CheckCircle as CheckCircleIcon,
+  ArrowLeft,
+  Send,
+  RotateCcw,
+  MessageSquare,
+  UserCircle,
+  Bot,
+  Star as StarIcon,
+  Calendar as CalendarIcon,
+  History,
+  Smile,
+  Frown,
+  Eye,
+  EyeOff,
+  PlusCircle,
+  Smartphone,
 } from 'lucide-react';
 
 // --- MOCK DATA STRUCTURES ---
@@ -51,9 +70,73 @@ const MOCK_FEEDBACK = [
   { id: 4, name: 'Dana Evans', rating: 1, sentiment: 'Negative', date: '2024-10-24', summary: 'The manager was rude and refused to honor the coupon.', status: 'Escalated', flagged: true, channel: 'Google' },
 ];
 
-const MOCK_RECOVERY_CASES = [
-  { id: 101, customer: 'Alice Johnson', summary: 'Overcharged for service.', status: 'Awaiting Owner Approval', actions: ['AI Drafted Apology', 'AI Drafted Solution'], timeline: [{time: '10:00', event: 'New case opened'}, {time: '10:05', event: 'AI Drafted Reply'}] },
-  { id: 102, customer: 'Frank Miller', summary: 'Product defective on arrival.', status: 'Follow-up Due (48h)', actions: ['Approved & Sent Apology'], timeline: [{time: '09:00', event: 'New case opened'}, {time: '09:30', event: 'Owner Approved & Sent'}] },
+const MOCK_RECOVERY_STATS = {
+  totalNegative: 45,
+  recoveryRate: 68.5,
+  avgResponseTime: 1.2,
+  resolvedCount: 31,
+};
+
+const MOCK_RECOVERY_CUSTOMER_DATA = {
+  name: 'Jane Doe',
+  phone: '(555) 123-4567',
+  email: 'jane.doe@example.com',
+  visits: 8,
+  pastComplaints: 2
+};
+
+const MOCK_RECOVERY_TICKETS = [
+  {
+    id: 'tkt001',
+    customer: 'Jane Doe',
+    rating: 1,
+    excerpt: 'The delivery was 45 minutes late and the food was cold.',
+    channel: 'SMS',
+    time: '1 hour ago',
+    status: 'New',
+    hasDraft: true,
+    aiDraft: "Dear Jane, we sincerely apologize for the unacceptable delay and cold food. We understand your frustration. To make this right, we've issued a full refund and added a $10 credit to your account for your next order.",
+    timeline: [
+      { type: 'customer', content: "The delivery was 45 minutes late and the food was cold. I want a refund.", sender: 'Jane Doe', time: '10:00 AM' },
+      { type: 'ai_draft', content: "Draft: We sincerely apologize...", sender: 'AI', time: '10:05 AM' }
+    ],
+    csat: null,
+    internalNotes: ''
+  },
+  {
+    id: 'tkt002',
+    customer: 'Marcus V.',
+    rating: 2,
+    excerpt: 'Waitress was unfriendly and seemed rushed when taking our order.',
+    channel: 'Email',
+    time: 'Yesterday',
+    status: 'Responding',
+    hasDraft: true,
+    aiDraft: "Hello Marcus, thank you for bringing this to our attention. We are addressing this with our team immediately. We would like to professionally handle this by arranging a personal call from our Shift Manager.",
+    timeline: [
+      { type: 'customer', content: "We had a bad experience with the service.", sender: 'Marcus V.', time: 'Oct 24, 2025' },
+      { type: 'sent', content: "Initial automated acknowledgement sent. Draft below.", sender: 'You/AI', time: 'Oct 24, 2025', channel: 'Email' }
+    ],
+    csat: 'Satisfied',
+    internalNotes: ''
+  },
+  {
+    id: 'tkt003',
+    customer: 'Anonymous',
+    rating: 3,
+    excerpt: 'The noise level was too high, making conversation difficult.',
+    channel: 'App',
+    time: 'Oct 20, 2025',
+    status: 'Resolved',
+    hasDraft: false,
+    aiDraft: null,
+    timeline: [
+      { type: 'customer', content: "Noise level was too high.", sender: 'Anonymous', time: 'Oct 20, 2025' },
+      { type: 'sent', content: "We noted your feedback and are looking at acoustic paneling. Thank you.", sender: 'You/AI', time: 'Oct 21, 2025', channel: 'App' }
+    ],
+    csat: 'Not Satisfied',
+    internalNotes: ''
+  }
 ];
 
 const MOCK_WINBACK_ANALYTICS = {
@@ -408,67 +491,630 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
   );
 };
 
-const AIRecoveryCenter = ({ cases }: { cases: typeof MOCK_RECOVERY_CASES }) => (
-  <div className="space-y-6">
-    <h2 className="text-3xl font-bold text-gray-900">AI Recovery Center</h2>
+// --- AI Recovery Center Components ---
 
-    {/* Settings Toggles */}
-    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500">
-      <h3 className="text-xl font-semibold mb-4 text-gray-800">AI Recovery Settings</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <label className="flex items-center cursor-pointer">
-          <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-600 rounded-lg border-gray-300" />
-          <span className="ml-2 text-gray-700 font-medium">Auto-apology: ON</span>
-        </label>
-        <label className="flex items-center cursor-pointer">
-          <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-600 rounded-lg border-gray-300" />
-          <span className="ml-2 text-gray-700 font-medium">Auto-solution: ON</span>
-        </label>
-        <div className="col-span-full sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Auto-follow-up:</label>
-          <select className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-            <option>24h</option>
-            <option>48h (Recommended)</option>
-            <option>72h</option>
-          </select>
-        </div>
-        <div className="col-span-full">
-          <p className="text-sm font-medium text-gray-700 mb-2">Auto-request review only if:</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer says "Thank you"</span></label>
-            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer gives thumbs up</span></label>
-            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer marks it "resolved"</span></label>
-          </div>
-        </div>
-      </div>
+const RecoveryStatCard = ({ title, value, unit, colorClass, icon: Icon }: {
+  title: string;
+  value: string | number;
+  unit?: string;
+  colorClass: string;
+  icon: React.ElementType;
+}) => (
+  <div className={`bg-white p-5 rounded-xl shadow-md border-l-4 ${colorClass}`}>
+    <div className="flex items-center justify-between">
+      <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
+      <Icon className={`text-xl ${colorClass.replace('border-', 'text-')} opacity-75`} />
     </div>
-
-    {/* Case List */}
-    <div className="space-y-4">
-      {cases.map(c => (
-        <div key={c.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500">
-          <div className="flex justify-between items-start mb-3">
-            <h4 className="text-xl font-bold text-gray-900">Case #{c.id}: {c.customer}</h4>
-            <span className="px-3 py-1 text-sm font-semibold bg-indigo-100 text-indigo-800 rounded-full">{c.status}</span>
-          </div>
-          <p className="text-gray-600 mb-3 font-semibold">Problem summary: <span className="font-normal">{c.summary}</span></p>
-
-          <div className="bg-gray-50 p-3 rounded-lg border mb-4">
-            <p className="font-semibold text-sm">AI Drafted Apology:</p>
-            <p className="text-sm text-gray-700 italic">"Dear {c.customer}, please accept our deepest apologies for the issue you experienced. We take this very seriously and have drafted a personalized response for your approval..."</p>
-          </div>
-
-          <div className="flex flex-wrap space-x-2 mt-2">
-            <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition mb-2">Approve + Send</button>
-            <button className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition mb-2">Edit Message</button>
-            <button className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition mb-2">Escalate to Owner</button>
-            <button className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition mb-2">Mark Resolved</button>
-          </div>
-        </div>
-      ))}
+    <div className="mt-1">
+      <p className="text-3xl font-bold text-gray-900">
+        {value}
+        {unit && <span className="ml-1 text-base font-normal text-gray-600">{unit}</span>}
+      </p>
     </div>
   </div>
 );
+
+const RecoveryStatsWidget = ({ stats }: { stats: typeof MOCK_RECOVERY_STATS }) => (
+  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <RecoveryStatCard title="Negative Feedback" value={stats.totalNegative} unit="Tickets" colorClass="border-red-500" icon={ThumbsDown} />
+    <RecoveryStatCard title="Recovery Rate" value={stats.recoveryRate} unit="%" colorClass="border-green-500" icon={HandshakeIcon} />
+    <RecoveryStatCard title="Avg Response Time" value={stats.avgResponseTime} unit="hrs" colorClass="border-blue-500" icon={ClockIcon} />
+    <RecoveryStatCard title="Resolved Last Month" value={stats.resolvedCount} unit="Tickets" colorClass="border-yellow-500" icon={CheckCircleIcon} />
+  </div>
+);
+
+const RecoveryEmptyState = ({ title, message, ctaText, onCtaClick }: {
+  title: string;
+  message: string;
+  ctaText?: string;
+  onCtaClick?: () => void;
+}) => (
+  <div className="text-center py-12 px-4">
+    <Inbox className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+    <h3 className="text-xl font-bold text-gray-700">{title}</h3>
+    <p className="mt-2 text-sm text-gray-500">{message}</p>
+    {ctaText && onCtaClick && (
+      <button
+        onClick={onCtaClick}
+        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
+      >
+        <PlusCircle className="mr-2 h-4 w-4" /> {ctaText}
+      </button>
+    )}
+  </div>
+);
+
+const RecoveryInboxFilters = ({ currentFilters, setFilters, searchTerm, setSearchTerm }: {
+  currentFilters: any;
+  setFilters: (filters: any) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}) => {
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      [key]: prev[key] === value ? null : value
+    }));
+  };
+
+  const filterButton = (key: string, value: any, label: string) => {
+    const isActive = currentFilters[key] === value;
+    return (
+      <button
+        key={value}
+        onClick={() => handleFilterChange(key, value)}
+        className={`px-3 py-1 text-xs rounded-full transition-colors font-medium ${
+          isActive
+            ? 'bg-indigo-600 text-white shadow-md'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+      >
+        {label}
+      </button>
+    );
+  };
+
+  return (
+    <div className="p-4 sm:p-6 border-b bg-gray-50 rounded-t-xl">
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input
+            type="text"
+            placeholder="Search customers or feedback excerpts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-2 items-center text-sm border-t pt-4">
+        <span className="font-semibold text-gray-600 flex-shrink-0">Filter By:</span>
+        <div className="flex items-center space-x-2">
+          <span className="text-gray-500">Status:</span>
+          {filterButton('status', 'New', 'New')}
+          {filterButton('status', 'Responding', 'Responding')}
+          {filterButton('status', 'Resolved', 'Resolved')}
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-gray-500">Rating:</span>
+          {filterButton('rating', 1, '1 Star')}
+          {filterButton('rating', 2, '2 Stars')}
+          {filterButton('rating', 3, '3 Stars')}
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-gray-500">Channel:</span>
+          {filterButton('channel', 'SMS', 'SMS')}
+          {filterButton('channel', 'Email', 'Email')}
+          {filterButton('channel', 'App', 'App')}
+        </div>
+        <button onClick={() => { setFilters({}); setSearchTerm(''); }} className="ml-auto px-3 py-1 text-sm text-gray-500 hover:text-gray-700 flex items-center">
+          <X className="mr-1 h-4 w-4" /> Clear All
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryTicketRow = ({ ticket, onOpen }: { ticket: any; onOpen: (id: string) => void }) => {
+  const ratingColor = ticket.rating === 1 ? 'bg-red-100 text-red-700' :
+    ticket.rating === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700';
+
+  const statusPill = (status: string) => {
+    switch (status) {
+      case 'New': return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">{status}</span>;
+      case 'Responding': return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">{status}</span>;
+      case 'Resolved': return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">{status}</span>;
+      default: return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">{status}</span>;
+    }
+  };
+
+  const channelIcon = (channel: string) => {
+    switch (channel.toLowerCase()) {
+      case 'sms': return <Phone className="h-5 w-5 text-blue-500" aria-label="SMS" />;
+      case 'email': return <Mail className="h-5 w-5 text-red-500" aria-label="Email" />;
+      case 'app': return <Smartphone className="h-5 w-5 text-green-500" aria-label="In-App" />;
+      default: return <User className="h-5 w-5 text-gray-500" aria-label="Unknown" />;
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 sm:p-6 hover:bg-gray-50 transition border-b border-gray-100 last:border-b-0">
+      <button onClick={() => onOpen(ticket.id)} className="flex-grow min-w-0 md:w-auto mb-2 sm:mb-0 text-left p-0 border-none bg-transparent">
+        <div className="flex items-center space-x-3 cursor-pointer">
+          <span className={`${ratingColor} px-2 py-0.5 text-xs font-bold rounded-md flex-shrink-0`}>
+            {ticket.rating}★
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900 truncate">{ticket.customer || 'Anonymous Customer'}</p>
+            <p className="text-sm text-gray-500 truncate">{ticket.excerpt}</p>
+          </div>
+        </div>
+      </button>
+
+      <div className="flex items-center space-x-4 flex-shrink-0 ml-auto mr-4">
+        <span className="text-sm text-gray-500">{ticket.time}</span>
+        <span className="text-lg">{channelIcon(ticket.channel)}</span>
+        {statusPill(ticket.status)}
+      </div>
+
+      <div className="flex space-x-2 flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+        {ticket.hasDraft && ticket.status !== 'Resolved' && (
+          <button onClick={() => onOpen(ticket.id)} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center">
+            <Send className="mr-1 h-4 w-4" /> Approve & Send
+          </button>
+        )}
+        <button onClick={() => onOpen(ticket.id)} className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center">
+          <MessageSquare className="mr-1 h-4 w-4" /> Open
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryCustomerPanel = ({ customer = MOCK_RECOVERY_CUSTOMER_DATA }: { customer?: typeof MOCK_RECOVERY_CUSTOMER_DATA }) => {
+  const infoItem = (Icon: React.ElementType, label: string, value: string) => (
+    <div className="flex items-center space-x-2 text-sm">
+      <Icon className="w-4 h-4 text-gray-500" />
+      <span className="font-medium text-gray-700">{label}:</span>
+      <span className="text-gray-900 font-semibold">{value}</span>
+    </div>
+  );
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-300">
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Customer Details</h3>
+      <div className="space-y-3">
+        {infoItem(User, "Name", customer.name)}
+        {infoItem(Phone, "Phone", customer.phone)}
+        {infoItem(Mail, "Email", customer.email)}
+        {infoItem(Calendar, "Visits", `${customer.visits} in 12 mo`)}
+        {infoItem(AlertTriangle, "Past Complaints", customer.pastComplaints > 0 ? `${customer.pastComplaints} (View Log)` : 'None')}
+      </div>
+      <button className="mt-4 w-full py-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition border-t pt-3 flex items-center justify-center">
+        <History className="mr-2 h-4 w-4" /> View Full Purchase History
+      </button>
+    </div>
+  );
+};
+
+const RecoveryTimelineMessage = ({ message }: { message: any }) => {
+  const isCustomer = message.type === 'customer';
+  const isAi = message.type === 'ai_draft';
+  const isSent = message.type === 'sent';
+
+  let cardClasses = 'p-4 rounded-xl shadow-sm border border-gray-200';
+  let Icon = UserCircle;
+  let senderName = message.sender;
+
+  if (isCustomer) {
+    cardClasses = 'bg-white shadow-md border-t-4 border-gray-300';
+    Icon = MessageSquare;
+  } else if (isAi) {
+    cardClasses = 'bg-yellow-50 shadow-md border-l-4 border-yellow-400';
+    Icon = Bot;
+    senderName = 'AI Draft';
+      } else if (isSent) {
+        cardClasses = 'bg-blue-50 shadow-md border-l-4 border-blue-500 ml-auto';
+        Icon = Send;
+        senderName = `Sent via ${message.channel} (${message.sender})`;
+      }
+
+  return (
+    <div className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex items-start space-x-3 max-w-full ${isSent ? 'flex-row-reverse space-x-reverse' : ''} ${cardClasses}`}>
+        <Icon className={`text-xl flex-shrink-0 ${isAi ? 'text-yellow-600' : isSent ? 'text-blue-600' : 'text-gray-500'}`} />
+        <div className={`text-sm ${isSent ? 'text-right' : 'text-left'}`}>
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-bold text-gray-800 text-xs sm:text-sm">{senderName}</span>
+            <span className="text-xs text-gray-400 ml-3">{message.time}</span>
+          </div>
+          <p className={`text-gray-700 ${isAi ? 'italic' : ''}`} dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br/>') }}></p>
+          {isAi && <p className="mt-2 text-xs text-yellow-700 font-medium">Draft created based on problem summary.</p>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryToneButton = ({ tone, currentTone, setTone }: { tone: string; currentTone: string; setTone: (tone: string) => void }) => (
+  <button
+    onClick={() => setTone(tone)}
+    className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+      currentTone === tone
+        ? 'bg-blue-600 text-white shadow-md'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+    }`}
+  >
+    {tone}
+  </button>
+);
+
+const RecoveryAiComposer = ({ draftMessage, setDraftMessage, onApproveSend, onRegenerate, channel, isLoading, isDraftEmpty }: {
+  draftMessage: string;
+  setDraftMessage: (msg: string) => void;
+  onApproveSend: () => void;
+  onRegenerate: () => void;
+  channel: string;
+  isLoading: boolean;
+  isDraftEmpty: boolean;
+}) => {
+  const [tone, setTone] = useState('Empathetic');
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const charCount = draftMessage ? draftMessage.length : 0;
+  const isSms = channel?.toLowerCase() === 'sms';
+  const charLimit = isSms ? 160 : 5000;
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500">
+      <h3 className="text-xl font-bold text-indigo-700 mb-4">AI Draft for Reply</h3>
+
+      {isLoading ? (
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-full"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      ) : (
+        <textarea
+          value={draftMessage}
+          onChange={(e) => setDraftMessage(e.target.value)}
+          rows={isSms ? 4 : 8}
+          className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:ring-blue-500 focus:border-blue-500 transition"
+          placeholder="AI draft will appear here..."
+        />
+      )}
+
+      <div className="flex justify-between items-center text-xs mt-2">
+        <p className={`font-medium ${charCount > charLimit ? 'text-red-500' : 'text-gray-500'}`}>
+          {charCount} / {charLimit} chars ({isSms ? 'SMS' : 'Email'} format)
+        </p>
+        <button onClick={() => setShowAiPrompt(!showAiPrompt)} className="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+          {showAiPrompt ? <EyeOff className="mr-1 h-4 w-4" /> : <Eye className="mr-1 h-4 w-4" />} {showAiPrompt ? 'Hide' : 'Show'} AI Prompt
+        </button>
+      </div>
+
+      <div className="mt-4">
+        <span className="text-xs font-semibold text-gray-700 block mb-1">Tone Presets:</span>
+        <div className="flex space-x-2">
+          <RecoveryToneButton tone="Empathetic" currentTone={tone} setTone={setTone} />
+          <RecoveryToneButton tone="Professional" currentTone={tone} setTone={setTone} />
+          <RecoveryToneButton tone="Short & Direct" currentTone={tone} setTone={setTone} />
+        </div>
+      </div>
+
+      <div className="flex space-x-3 mt-6 border-t pt-4">
+        <button
+          onClick={onApproveSend}
+          disabled={isDraftEmpty || isLoading}
+          className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+        >
+          <Send className="mr-2 h-4 w-4" /> Approve & Send
+        </button>
+        <button
+          onClick={onRegenerate}
+          disabled={isLoading}
+          className="w-32 py-3 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 flex items-center justify-center"
+        >
+          {isLoading ? <RotateCcw className="h-4 w-4 animate-spin" /> : <><RotateCcw className="mr-1 h-4 w-4" /> Regenerate</>}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryFollowUpModal = ({ isOpen, onClose, ticketId }: { isOpen: boolean; onClose: () => void; ticketId: string }) => {
+  if (!isOpen) return null;
+
+  const [template, setTemplate] = useState('Short check-in');
+  const [schedule, setSchedule] = useState('now');
+
+  const handleConfirm = () => {
+    console.log(`Scheduling follow-up for ticket ${ticketId} with template ${template} at ${schedule}.`);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full transition-all transform duration-300" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center border-b pb-3 mb-4">
+          <h3 className="text-2xl font-bold text-gray-800">Schedule Follow-Up</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="mt-6 pt-4 border-t">
+          <button onClick={handleConfirm} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
+            Confirm & Schedule Follow-Up
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryActionPanel = ({ ticket, onSendSatisfactionCheck, onSendFollowUp }: {
+  ticket: any;
+  onSendSatisfactionCheck: () => void;
+  onSendFollowUp: () => void;
+}) => {
+  const [notes, setNotes] = useState(ticket.internalNotes || '');
+
+  const csatIndicator = (csat: string | null) => {
+    if (!csat) return <span className="text-sm font-medium text-gray-500">Awaiting Check</span>;
+    const isSatisfied = csat === 'Satisfied';
+    return (
+      <span className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center ${isSatisfied ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        {isSatisfied ? <Smile className="mr-1 h-4 w-4" /> : <Frown className="mr-1 h-4 w-4" />}
+        {csat}
+      </span>
+    );
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Ticket Actions & Internal Data</h3>
+      <div className="mb-4 pb-4 border-b">
+        <p className="font-semibold text-gray-700 mb-2 flex justify-between items-center">
+          Customer Satisfaction Check:
+          {csatIndicator(ticket.csat)}
+        </p>
+        <button
+          onClick={onSendSatisfactionCheck}
+          disabled={ticket.csat !== null}
+          className="w-full py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center"
+        >
+          <StarIcon className="mr-2 h-4 w-4" /> Send Satisfaction Check
+        </button>
+      </div>
+      <div className="space-y-4">
+        <button
+          onClick={onSendFollowUp}
+          className="w-full py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center justify-center"
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" /> Send Follow-Up
+        </button>
+        <div>
+          <p className="font-semibold text-gray-700 mb-2">Internal Notes:</p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="Add internal notes about the case, team assignments, etc."
+            className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:ring-blue-500 focus:border-blue-500 transition"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryInboxView = ({ tickets, stats, setRoute }: { tickets: typeof MOCK_RECOVERY_TICKETS; stats: typeof MOCK_RECOVERY_STATS; setRoute: (id: string | null) => void }) => {
+  const [filters, setFilters] = useState<any>({});
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredTickets = tickets.filter(ticket => {
+    const matchesSearch = ticket.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filters.status && ticket.status !== filters.status) return false;
+    if (filters.rating && ticket.rating !== filters.rating) return false;
+    if (filters.channel && ticket.channel !== filters.channel) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-extrabold text-gray-900">AI Recovery Inbox</h1>
+      <RecoveryStatsWidget stats={stats} />
+      <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-100">
+        <RecoveryInboxFilters
+          currentFilters={filters}
+          setFilters={setFilters}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
+        <div className="divide-y divide-gray-100">
+          {filteredTickets.length > 0 ? (
+            filteredTickets.map((ticket) => (
+              <RecoveryTicketRow key={ticket.id} ticket={ticket} onOpen={setRoute} />
+            ))
+          ) : (
+            <RecoveryEmptyState
+              title="No Results Found"
+              message="Try clearing your filters or changing your search term."
+            />
+          )}
+        </div>
+        <div className="p-4 text-center text-sm text-gray-500 border-t">
+          Showing {filteredTickets.length} tickets.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RecoveryConversationView = ({ ticketId, setRoute, updateTicket }: {
+  ticketId: string;
+  setRoute: (id: string | null) => void;
+  updateTicket: (ticket: any) => void;
+}) => {
+  const initialTicket = MOCK_RECOVERY_TICKETS.find(t => t.id === ticketId);
+  const [ticket, setTicket] = useState(initialTicket);
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [draftMessage, setDraftMessage] = useState(ticket?.aiDraft || '');
+  const [timeline, setTimeline] = useState(ticket?.timeline || []);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (!ticket) {
+    return <div className="p-8 text-center text-xl text-red-500">Ticket not found. <button onClick={() => setRoute(null)} className="text-blue-600 underline">Go back to Inbox</button></div>;
+  }
+
+  const handleApproveSend = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      const sentMessage = {
+        type: 'sent',
+        content: draftMessage,
+        sender: 'You/AI',
+        time: new Date().toLocaleTimeString(),
+        channel: ticket.channel
+      };
+      const newTimeline = [...timeline, sentMessage];
+      const updatedTicket = { ...ticket, status: 'Responding', hasDraft: false, timeline: newTimeline };
+      setTimeline(newTimeline);
+      setTicket(updatedTicket);
+      updateTicket(updatedTicket);
+      setDraftMessage('');
+      setIsLoading(false);
+      setShowConfirmation(true);
+      setTimeout(() => setShowConfirmation(false), 3000);
+    }, 800);
+  };
+
+  const handleRegenerate = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      const newDraft = "We deeply apologize again and would like to offer a 20% discount on your next two orders. We value your business.";
+      setDraftMessage(newDraft);
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const handleMarkResolved = () => {
+    const updatedTicket = { ...ticket, status: 'Resolved' };
+    setTicket(updatedTicket);
+    updateTicket(updatedTicket);
+  };
+
+  const handleSendSatisfactionCheck = () => {
+    const updatedTicket = { ...ticket, csat: 'Awaiting' };
+    setTicket(updatedTicket);
+    updateTicket(updatedTicket);
+    setShowConfirmation(true);
+    setTimeout(() => setShowConfirmation(false), 3000);
+  };
+
+  const severityColor = ticket.rating <= 2 ? 'bg-red-500' : 'bg-orange-500';
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <header className="bg-white shadow-md p-4 sm:p-6 border-b">
+        <div className="flex flex-wrap items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button onClick={() => setRoute(null)} className="text-gray-500 hover:text-gray-800 transition">
+              <ArrowLeft className="h-6 w-6" />
+            </button>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Ticket #{ticketId} - {ticket.customer}</h1>
+          </div>
+          <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+            <span className={`px-3 py-1 text-sm font-semibold rounded-full text-white ${severityColor} uppercase`}>
+              {ticket.rating} Star | High Severity
+            </span>
+            {ticket.status !== 'Resolved' ? (
+              <button
+                onClick={handleMarkResolved}
+                className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center"
+              >
+                <CheckCircle className="mr-1 h-4 w-4" /> Resolve
+              </button>
+            ) : (
+              <span className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg">Resolved</span>
+            )}
+          </div>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">Problem: {ticket.excerpt} | Received: {ticket.time}</p>
+      </header>
+
+      <div className="flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div className="lg:w-2/3 space-y-6 overflow-y-auto pr-0 lg:pr-6 mb-6 lg:mb-0">
+          <RecoveryActionPanel
+            ticket={ticket}
+            onSendSatisfactionCheck={handleSendSatisfactionCheck}
+            onSendFollowUp={() => setIsFollowUpModalOpen(true)}
+          />
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 h-full">
+            <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">Message Thread</h2>
+            <div className="space-y-5">
+              {timeline.map((msg, index) => (
+                <RecoveryTimelineMessage key={index} message={msg} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:w-1/3 space-y-6">
+          <RecoveryCustomerPanel customer={MOCK_RECOVERY_CUSTOMER_DATA} />
+          <RecoveryAiComposer
+            draftMessage={draftMessage}
+            setDraftMessage={setDraftMessage}
+            onApproveSend={handleApproveSend}
+            onRegenerate={handleRegenerate}
+            channel={ticket.channel}
+            isLoading={isLoading}
+            isDraftEmpty={!draftMessage}
+          />
+        </div>
+      </div>
+
+      {showConfirmation && (
+        <div className="fixed bottom-4 right-4 p-4 bg-green-600 text-white rounded-lg shadow-xl flex items-center space-x-2 transition-opacity duration-300">
+          <CheckCircle className="h-5 w-5" />
+          <span>Action successful!</span>
+        </div>
+      )}
+
+      <RecoveryFollowUpModal
+        isOpen={isFollowUpModalOpen}
+        onClose={() => setIsFollowUpModalOpen(false)}
+        ticketId={ticketId}
+      />
+    </div>
+  );
+};
+
+const AIRecoveryCenter = () => {
+  const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
+  const [allTickets, setAllTickets] = useState(MOCK_RECOVERY_TICKETS);
+
+  const setRoute = (ticketId: string | null) => {
+    setCurrentTicketId(ticketId);
+  };
+
+  const updateTicket = (updatedTicket: any) => {
+    setAllTickets(prevTickets =>
+      prevTickets.map(t => t.id === updatedTicket.id ? updatedTicket : t)
+    );
+  };
+
+  if (currentTicketId) {
+    return <RecoveryConversationView ticketId={currentTicketId} setRoute={setRoute} updateTicket={updateTicket} />;
+  }
+
+  return <RecoveryInboxView tickets={allTickets} stats={MOCK_RECOVERY_STATS} setRoute={setRoute} />;
+};
 
 const WinBackEngine = ({ analytics }: { analytics: typeof MOCK_WINBACK_ANALYTICS }) => (
   <div className="space-y-8">
@@ -824,7 +1470,7 @@ export default function DashboardPage() {
       case 'inbox':
         return <FeedbackInbox feedback={MOCK_FEEDBACK} />;
       case 'recovery':
-        if (['owner', 'manager', 'admin'].includes(userRole)) return <AIRecoveryCenter cases={MOCK_RECOVERY_CASES} />;
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <AIRecoveryCenter />;
         return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the AI Recovery Center.</div>;
       case 'winback':
         if (['owner', 'manager', 'admin'].includes(userRole)) return <WinBackEngine analytics={MOCK_WINBACK_ANALYTICS} />;

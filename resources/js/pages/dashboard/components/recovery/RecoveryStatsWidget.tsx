@@ -1,6 +1,5 @@
 import React from 'react';
-import { ThumbsDown, Handshake, Clock, CheckCircle } from 'lucide-react';
-import { WidgetCard } from '../shared/WidgetCard';
+import { ThumbsDown, Handshake, Clock, Star } from 'lucide-react';
 
 interface RecoveryStatsWidgetProps {
   stats: {
@@ -8,16 +7,19 @@ interface RecoveryStatsWidgetProps {
     recoveryRate: number;
     avgResponseTime: number;
     resolvedCount: number;
+    fiveStarCount: number;
   };
 }
 
-const RecoveryStatCard = ({ title, value, unit, colorClass, icon: Icon }: {
+interface StatCardProps {
   title: string;
   value: string | number;
   unit?: string;
   colorClass: string;
   icon: React.ElementType;
-}) => (
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, unit, colorClass, icon: Icon }) => (
   <div className={`bg-white p-5 rounded-xl shadow-md border-l-4 ${colorClass}`}>
     <div className="flex items-center justify-between">
       <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
@@ -34,10 +36,9 @@ const RecoveryStatCard = ({ title, value, unit, colorClass, icon: Icon }: {
 
 export const RecoveryStatsWidget: React.FC<RecoveryStatsWidgetProps> = ({ stats }) => (
   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-    <RecoveryStatCard title="Negative Feedback" value={stats.totalNegative} unit="Tickets" colorClass="border-red-500" icon={ThumbsDown} />
-    <RecoveryStatCard title="Recovery Rate" value={stats.recoveryRate} unit="%" colorClass="border-green-500" icon={Handshake} />
-    <RecoveryStatCard title="Avg Response Time" value={stats.avgResponseTime} unit="hrs" colorClass="border-blue-500" icon={Clock} />
-    <RecoveryStatCard title="Resolved Last Month" value={stats.resolvedCount} unit="Tickets" colorClass="border-yellow-500" icon={CheckCircle} />
+    <StatCard title="Negative Feedback (1-3★)" value={stats.totalNegative} unit="Tickets" colorClass="border-red-500" icon={ThumbsDown} />
+    <StatCard title="Recovery Rate" value={stats.recoveryRate} unit="%" colorClass="border-green-500" icon={Handshake} />
+    <StatCard title="Avg Response Time" value={stats.avgResponseTime} unit="hrs" colorClass="border-blue-500" icon={Clock} />
+    <StatCard title="5-Star Referral Potential" value={stats.fiveStarCount} unit="Customers" colorClass="border-yellow-500" icon={Star} />
   </div>
 );
-

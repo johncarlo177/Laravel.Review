@@ -20,6 +20,7 @@ export const MOCK_RECOVERY_STATS = {
   recoveryRate: 68.5,
   avgResponseTime: 1.2,
   resolvedCount: 31,
+  fiveStarCount: 150, // New stat for referral potential
 };
 
 export const MOCK_RECOVERY_CUSTOMER_DATA = {
@@ -80,6 +81,39 @@ export const MOCK_RECOVERY_TICKETS = [
       { type: 'sent', content: "We noted your feedback and are looking at acoustic paneling. Thank you.", sender: 'You/AI', time: 'Oct 21, 2025', channel: 'App' }
     ],
     csat: 'Not Satisfied',
+    internalNotes: ''
+  },
+  {
+    id: 'tkt004',
+    customer: 'Sarah K.',
+    rating: 4,
+    excerpt: 'Great food, but the wait time was a bit long (30 mins).',
+    channel: 'App',
+    time: 'Today',
+    status: 'New',
+    hasDraft: true,
+    aiDraft: "Hi Sarah, thank you for the wonderful feedback on the food! We noticed your comment about the wait time. We are working to speed up our kitchen flow and appreciate your patience. We hope to earn that 5th star next time!",
+    timeline: [
+      { type: 'customer', content: "Great food, but the wait time was a bit long (30 mins).", sender: 'Sarah K.', time: '11:30 AM' },
+    ],
+    csat: null,
+    internalNotes: ''
+  },
+  {
+    id: 'tkt005',
+    customer: 'Tom W.',
+    rating: 5,
+    excerpt: "Best meal I've had all year. Server was amazing!",
+    channel: 'Email',
+    time: '3 days ago',
+    status: 'Resolved',
+    hasDraft: false,
+    aiDraft: null,
+    timeline: [
+      { type: 'customer', content: "Best meal I've had all year. Server was amazing!", sender: 'Tom W.', time: 'Dec 8, 2025' },
+      { type: 'sent', content: "Thank you so much for the kind words!", sender: 'You/AI', time: 'Dec 8, 2025', channel: 'Email' }
+    ],
+    csat: 'Satisfied',
     internalNotes: ''
   }
 ];

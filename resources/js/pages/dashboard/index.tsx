@@ -288,9 +288,9 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
       
       {/* Search Bar and Filters */}
       <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Bar */}
-          <div className="lg:col-span-2">
+          <div className="flex-1 min-w-0">
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -305,7 +305,7 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
           </div>
 
           {/* Star Rating Filter */}
-          <div>
+          <div className="w-full lg:w-48 flex-shrink-0">
             <label className="block text-sm font-medium text-gray-700 mb-1">Star Rating</label>
             <select
               value={starRatingFilter}
@@ -322,7 +322,7 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
           </div>
 
           {/* Date Filter */}
-          <div>
+          <div className="w-full lg:w-48 flex-shrink-0">
             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
             <select
               value={dateFilter}
@@ -337,7 +337,7 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
           </div>
 
           {/* Channel Filter */}
-          <div>
+          <div className="w-full lg:w-48 flex-shrink-0">
             <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
             <select
               value={channelFilter}

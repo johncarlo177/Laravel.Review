@@ -28,6 +28,8 @@ import {
   Edit,
   User,
   Brain,
+  Search,
+  Calendar,
 } from 'lucide-react';
 
 // --- MOCK DATA STRUCTURES ---
@@ -43,10 +45,10 @@ const MOCK_DASHBOARD_STATS = {
 };
 
 const MOCK_FEEDBACK = [
-  { id: 1, name: 'Alice Johnson', rating: 1, sentiment: 'Negative', date: '2024-10-25', summary: 'Slow service, waited 20 minutes for coffee.', status: 'Pending', flagged: true },
-  { id: 2, name: 'Bob Smith', rating: 5, sentiment: 'Positive', date: '2024-10-25', summary: 'Great food and fast service! Definitely coming back.', status: 'Resolved', flagged: false },
-  { id: 3, name: 'Charlie Doe', rating: 3, sentiment: 'Neutral', date: '2024-10-24', summary: 'The atmosphere was nice, but the seating felt cramped.', status: 'Needs follow-up', flagged: false },
-  { id: 4, name: 'Dana Evans', rating: 1, sentiment: 'Negative', date: '2024-10-24', summary: 'The manager was rude and refused to honor the coupon.', status: 'Escalated', flagged: true },
+  { id: 1, name: 'Alice Johnson', rating: 1, sentiment: 'Negative', date: '2024-10-25', summary: 'Slow service, waited 20 minutes for coffee.', status: 'Pending', flagged: true, channel: 'Google' },
+  { id: 2, name: 'Bob Smith', rating: 5, sentiment: 'Positive', date: '2024-10-25', summary: 'Great food and fast service! Definitely coming back.', status: 'Resolved', flagged: false, channel: 'Yelp' },
+  { id: 3, name: 'Charlie Doe', rating: 3, sentiment: 'Neutral', date: '2024-10-24', summary: 'The atmosphere was nice, but the seating felt cramped.', status: 'Needs follow-up', flagged: false, channel: 'Facebook' },
+  { id: 4, name: 'Dana Evans', rating: 1, sentiment: 'Negative', date: '2024-10-24', summary: 'The manager was rude and refused to honor the coupon.', status: 'Escalated', flagged: true, channel: 'Google' },
 ];
 
 const MOCK_RECOVERY_CASES = [
@@ -218,17 +220,58 @@ const DashboardOverview = ({ setView, stats }: { setView: (view: string) => void
 
 const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
   const [activeTab, setActiveTab] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [starRatingFilter, setStarRatingFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
 
   const filteredFeedback = feedback.filter(item => {
-    if (activeTab === 'All') return true;
-    if (activeTab === 'Negative (AI flagged)' && item.flagged) return true;
-    if (activeTab === 'Positive' && item.rating === 5 && !item.flagged) return true;
-    if (activeTab === 'Needs follow-up' && item.status === 'Needs follow-up') return true;
-    if (activeTab === 'Resolved' && item.status === 'Resolved') return true;
-    return false;
+    // Tab filter
+    if (activeTab !== 'All') {
+      if (activeTab === 'Negative (AI flagged)' && !item.flagged) return false;
+      if (activeTab === 'Positive' && !(item.rating === 5 && !item.flagged)) return false;
+      if (activeTab === 'Needs follow-up' && item.status !== 'Needs follow-up') return false;
+      if (activeTab === 'Resolved' && item.status !== 'Resolved') return false;
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        item.name.toLowerCase().includes(query) ||
+        item.summary.toLowerCase().includes(query) ||
+        item.status.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+
+    // Star rating filter
+    if (starRatingFilter !== 'all') {
+      const rating = parseInt(starRatingFilter);
+      if (item.rating !== rating) return false;
+    }
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const today = new Date();
+      const itemDate = new Date(item.date);
+      const diffTime = today.getTime() - itemDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (dateFilter === 'today' && diffDays !== 0) return false;
+      if (dateFilter === 'week' && diffDays > 7) return false;
+      if (dateFilter === 'month' && diffDays > 30) return false;
+    }
+
+    // Channel filter
+    if (channelFilter !== 'all' && item.channel !== channelFilter) {
+      return false;
+    }
+
+    return true;
   });
 
   const tabs = ['All', 'Negative (AI flagged)', 'Positive', 'Needs follow-up', 'Resolved'];
+  const channels = ['Google', 'Yelp', 'Facebook', 'Website', 'Other'];
 
   const statusColors: Record<string, string> = {
     'Pending': 'bg-yellow-100 text-yellow-800',
@@ -242,6 +285,75 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold text-gray-900">Feedback Inbox</h2>
+      
+      {/* Search Bar and Filters */}
+      <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search Bar */}
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, summary, or status..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Star Rating Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Star Rating</label>
+            <select
+              value={starRatingFilter}
+              onChange={(e) => setStarRatingFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
+            </select>
+          </div>
+
+          {/* Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
+          </div>
+
+          {/* Channel Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+            <select
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Channels</option>
+              {channels.map(channel => (
+                <option key={channel} value={channel}>{channel}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Status Tabs */}
       <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto pb-2">
         {tabs.map(tab => (
           <button
@@ -273,7 +385,14 @@ const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
               <p className="text-sm text-gray-700">
                 <span className="font-semibold">AI Summary:</span> {item.summary}
               </p>
-              <span className="text-xs text-gray-500 block">{item.date}</span>
+              <div className="flex items-center space-x-3 text-xs text-gray-500">
+                <span>{item.date}</span>
+                {item.channel && (
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
+                    {item.channel}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex space-x-2 flex-wrap md:flex-nowrap flex-shrink-0">
               <button className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 mb-1 md:mb-0">View Thread</button>

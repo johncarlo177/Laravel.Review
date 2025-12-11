@@ -1,1188 +1,771 @@
 import React, { useState, useEffect } from 'react';
+import { usePage, router } from '@inertiajs/react';
 import {
   Home,
   Inbox,
-  Bot,
-  DollarSign,
+  Shield,
+  Handshake,
+  Star,
   QrCode,
-  CreditCard,
-  Bell,
-  Users,
+  BarChart3,
+  Settings,
+  ShieldCheck,
   Menu,
   X,
-  ArrowRight,
+  LogOut,
+  Heart,
+  Gavel,
+  Filter,
   CheckCircle,
-  Ban,
-  Check,
-  Calendar,
-  Smartphone,
+  AlertTriangle,
+  DollarSign,
+  Users,
+  Clock,
+  Phone,
   Mail,
   Download,
-  Image as ImageIcon,
-  Phone,
-  AtSign,
-  Edit,
-  Settings,
-  PenSquare,
   Save,
-  Trash2,
-  ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Lock,
+  Edit,
   User,
-  UserCog,
-  Activity,
+  Brain,
 } from 'lucide-react';
 
-type PageId = 
-  | 'dashboard'
-  | 'inbox'
-  | 'recovery-setup'
-  | 'winback'
-  | 'qr-system'
-  | 'cards'
-  | 'alerts'
-  | 'staff'
-  | 'billing';
+// --- MOCK DATA STRUCTURES ---
 
-const DashboardPage = () => {
-  const [activePage, setActivePage] = useState<PageId>('dashboard');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [winbackSegment, setWinbackSegment] = useState('lost');
-  const [winbackMessage, setWinbackMessage] = useState('');
-  const [qrColor, setQrColor] = useState('#1e40af');
-  const [cardPhone, setCardPhone] = useState('(555) 500-1234');
-  const [cardEmail, setCardEmail] = useState('john@elitehvac.com');
-  const [recoverySettings, setRecoverySettings] = useState({
-    autoApology: true,
-    escalateToOwner: true,
-    autoFollowUp: true,
-    autoSolution: false,
+const MOCK_DASHBOARD_STATS = {
+  feedbackToday: 2,
+  feedbackLimit: 12,
+  recoveredCustomers: 3,
+  oneStarPrevented: 1,
+  googleFunnelHappy: 12,
+  googleFunnelPosted: 7,
+  aiTasksCompleted: 28,
+};
+
+const MOCK_FEEDBACK = [
+  { id: 1, name: 'Alice Johnson', rating: 1, sentiment: 'Negative', date: '2024-10-25', summary: 'Slow service, waited 20 minutes for coffee.', status: 'Pending', flagged: true },
+  { id: 2, name: 'Bob Smith', rating: 5, sentiment: 'Positive', date: '2024-10-25', summary: 'Great food and fast service! Definitely coming back.', status: 'Resolved', flagged: false },
+  { id: 3, name: 'Charlie Doe', rating: 3, sentiment: 'Neutral', date: '2024-10-24', summary: 'The atmosphere was nice, but the seating felt cramped.', status: 'Needs follow-up', flagged: false },
+  { id: 4, name: 'Dana Evans', rating: 1, sentiment: 'Negative', date: '2024-10-24', summary: 'The manager was rude and refused to honor the coupon.', status: 'Escalated', flagged: true },
+];
+
+const MOCK_RECOVERY_CASES = [
+  { id: 101, customer: 'Alice Johnson', summary: 'Overcharged for service.', status: 'Awaiting Owner Approval', actions: ['AI Drafted Apology', 'AI Drafted Solution'], timeline: [{time: '10:00', event: 'New case opened'}, {time: '10:05', event: 'AI Drafted Reply'}] },
+  { id: 102, customer: 'Frank Miller', summary: 'Product defective on arrival.', status: 'Follow-up Due (48h)', actions: ['Approved & Sent Apology'], timeline: [{time: '09:00', event: 'New case opened'}, {time: '09:30', event: 'Owner Approved & Sent'}] },
+];
+
+const MOCK_WINBACK_ANALYTICS = {
+  attempted: 22,
+  converted: 7,
+  revenueSaved: 1140,
+};
+
+// --- NAVIGATION & UI CONSTANTS ---
+
+const BRAND_COLOR = 'bg-blue-700 hover:bg-blue-800';
+const BRAND_TEXT = 'text-blue-700';
+
+const NAV_ITEMS = (userRole: string) => [
+  { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['owner', 'manager', 'staff', 'admin'] },
+  { id: 'inbox', label: 'Feedback Inbox', icon: Inbox, roles: ['owner', 'manager', 'staff', 'admin'] },
+  { id: 'recovery', label: 'AI Recovery Center', icon: Shield, roles: ['owner', 'manager', 'admin'] },
+  { id: 'winback', label: 'Win-Back Engine', icon: Handshake, roles: ['owner', 'manager', 'admin'] },
+  { id: 'reviews', label: 'Review Manager', icon: Star, roles: ['owner', 'manager', 'staff', 'admin'] },
+  { id: 'cards', label: 'QR Codes & Cards', icon: QrCode, roles: ['owner', 'manager', 'admin'] },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['owner', 'manager', 'admin'] },
+  { id: 'settings', label: 'Settings', icon: Settings, roles: ['owner', 'admin'] },
+  { id: 'admin', label: 'Super Admin', icon: ShieldCheck, roles: ['admin'] },
+].filter(item => item.roles.includes(userRole || 'owner'));
+
+// --- UTILITY COMPONENTS ---
+
+const BrandHeader = ({ currentUser }: { currentUser?: any }) => (
+  <div className="flex items-center space-x-2 p-4 border-b border-gray-200">
+    <Brain className={`text-2xl ${BRAND_TEXT}`} />
+    <h1 className="text-xl font-extrabold text-gray-900">Neviane</h1>
+    {currentUser && (
+      <span className="ml-auto text-xs text-gray-400 p-1 bg-gray-100 rounded-full">
+        ID: {currentUser.id?.toString().substring(0, 4) || 'User'}...
+      </span>
+    )}
+  </div>
+);
+
+const WidgetCard = ({ title, value, icon: Icon, color = 'text-blue-600', unit = '' }: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  color?: string;
+  unit?: string;
+}) => (
+  <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-gray-200 hover:shadow-xl transition-shadow">
+    <div className="flex justify-between items-center">
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <Icon className={`${color} text-2xl`} />
+    </div>
+    <p className="mt-1 text-3xl font-extrabold text-gray-900">{value}{unit}</p>
+  </div>
+);
+
+const ButtonCard = ({ title, icon: Icon, onClick, className = '' }: {
+  title: string;
+  icon: React.ElementType;
+  onClick: () => void;
+  className?: string;
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center p-6 rounded-xl shadow-xl transition-all duration-300 transform hover:scale-[1.02] ${BRAND_COLOR} text-white ${className}`}
+  >
+    <Icon className="text-3xl mb-3" />
+    <p className="text-lg font-semibold">{title}</p>
+  </button>
+);
+
+const Sidebar = ({
+  currentView,
+  setView,
+  userRole,
+  handleSignOut,
+  isSidebarOpen,
+  setIsSidebarOpen,
+  currentUser,
+}: {
+  currentView: string;
+  setView: (view: string) => void;
+  userRole: string;
+  handleSignOut: () => void;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+  currentUser?: any;
+}) => {
+  const navItems = NAV_ITEMS(userRole);
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      <div
+        className={`fixed inset-0 z-30 bg-gray-900 opacity-50 ${isSidebarOpen ? 'block lg:hidden' : 'hidden'}`}
+        onClick={() => setIsSidebarOpen(false)}
+      ></div>
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white z-40 flex flex-col shadow-xl`}>
+        <BrandHeader currentUser={currentUser} />
+        <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setView(item.id); setIsSidebarOpen(false); }}
+              className={`flex items-center w-full px-4 py-3 rounded-lg transition-colors duration-200 ${
+                currentView === item.id
+                  ? 'bg-blue-100 text-blue-700 font-bold'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+              }`}
+            >
+              <item.icon className="w-5 h-5 mr-3" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-gray-200">
+          <p className="text-xs text-gray-400 mb-2">Role: <span className="capitalize font-semibold text-gray-600">{userRole}</span></p>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center w-full px-4 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            <span>Log Out</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// --- PAGE COMPONENTS ---
+
+const DashboardOverview = ({ setView, stats }: { setView: (view: string) => void; stats: typeof MOCK_DASHBOARD_STATS }) => (
+  <div className="space-y-8">
+    <h2 className="text-3xl font-bold text-gray-900">AI Dashboard Overview</h2>
+
+    {/* Top Widgets */}
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <WidgetCard title="Today's Feedback" value={stats.feedbackToday} unit={`/${stats.feedbackLimit}`} icon={Inbox} color="text-yellow-600" />
+      <WidgetCard title="Recovered Customers" value={stats.recoveredCustomers} icon={Heart} color="text-green-600" />
+      <WidgetCard title="1-Star Prevented" value={stats.oneStarPrevented} icon={Gavel} color="text-red-600" />
+      <WidgetCard title="Google Reviews Funnel" value={stats.googleFunnelPosted} unit={`/${stats.googleFunnelHappy} happy`} icon={Filter} color="text-indigo-600" />
+      <WidgetCard title="AI Tasks Completed" value={stats.aiTasksCompleted} icon={Brain} color="text-blue-600" />
+    </div>
+
+    {/* Main Buttons */}
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-4">
+      <ButtonCard title="Feedback Inbox" icon={Inbox} onClick={() => setView('inbox')} />
+      <ButtonCard title="AI Recovery Center" icon={Shield} onClick={() => setView('recovery')} />
+      <ButtonCard title="Win-Back Engine" icon={Handshake} onClick={() => setView('winback')} />
+      <ButtonCard title="Review Manager" icon={Star} onClick={() => setView('reviews')} className="col-span-full md:col-span-1" />
+      <ButtonCard title="QR Codes & eBusiness Cards" icon={QrCode} onClick={() => setView('cards')} className="col-span-full md:col-span-2" />
+    </div>
+
+    {/* Quick Links */}
+    <div className="flex justify-center pt-4">
+      <button onClick={() => setView('settings')} className={`text-sm font-semibold ${BRAND_TEXT} hover:text-blue-800 transition flex items-center`}>
+        <Settings className="mr-2 h-4 w-4" /> Access All Settings
+      </button>
+    </div>
+  </div>
+);
+
+const FeedbackInbox = ({ feedback }: { feedback: typeof MOCK_FEEDBACK }) => {
+  const [activeTab, setActiveTab] = useState('All');
+
+  const filteredFeedback = feedback.filter(item => {
+    if (activeTab === 'All') return true;
+    if (activeTab === 'Negative (AI flagged)' && item.flagged) return true;
+    if (activeTab === 'Positive' && item.rating === 5 && !item.flagged) return true;
+    if (activeTab === 'Needs follow-up' && item.status === 'Needs follow-up') return true;
+    if (activeTab === 'Resolved' && item.status === 'Resolved') return true;
+    return false;
   });
-  const [alertSettings, setAlertSettings] = useState({
-    urgentAlerts: true,
-    negativeFeedback: true,
-    staffAssignment: false,
-  });
 
-  useEffect(() => {
-    // Close mobile menu when page changes
-    if (window.innerWidth < 1024) {
-      setIsMobileMenuOpen(false);
-    }
-  }, [activePage]);
+  const tabs = ['All', 'Negative (AI flagged)', 'Positive', 'Needs follow-up', 'Resolved'];
 
-  const showPage = (pageId: PageId) => {
-    setActivePage(pageId);
-  };
-
-  const SidebarLink = ({ 
-    id, 
-    icon: Icon, 
-    label, 
-    iconColor 
-  }: { 
-    id: PageId; 
-    icon: React.ElementType; 
-    label: string; 
-    iconColor: string;
-  }) => {
-    const isActive = activePage === id;
-    return (
-      <a
-        href="#"
-        id={`link-${id}`}
-        onClick={(e) => {
-          e.preventDefault();
-          showPage(id);
-        }}
-        className={`sidebar-link flex items-center p-3 rounded-xl transition ${
-          isActive
-            ? 'bg-blue-100/50 text-blue-700 font-semibold border-l-4 border-blue-600'
-            : 'text-gray-600 hover:bg-gray-100'
-        }`}
-      >
-        <Icon className={`text-lg mr-3 w-5 ${iconColor}`} />
-        {label}
-      </a>
-    );
-  };
-
-  const ToggleSwitch = ({ 
-    checked, 
-    onChange 
-  }: { 
-    checked: boolean; 
-    onChange: (checked: boolean) => void;
-  }) => {
-    return (
-      <label className="toggle-switch-ui relative inline-block w-12 h-6 ml-4 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="opacity-0 w-0 h-0"
-        />
-        <span
-          className={`absolute top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-200 before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:rounded-full before:transition-transform before:duration-200 before:shadow-md ${
-            checked ? 'bg-blue-600 before:translate-x-6' : 'bg-gray-200'
-          }`}
-        />
-      </label>
-    );
+  const statusColors: Record<string, string> = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Recovered': 'bg-green-100 text-green-800',
+    'Escalated': 'bg-red-100 text-red-800',
+    'Needs follow-up': 'bg-indigo-100 text-indigo-800',
+    'Waiting for customer': 'bg-purple-100 text-purple-800',
+    'Resolved': 'bg-gray-100 text-gray-800',
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[#fdfdfd] font-['Inter',sans-serif]">
-      {/* Mobile Header */}
-      <header className="lg:hidden bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-[#1f2937]">Neviane</h1>
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="text-gray-600 focus:outline-none"
-        >
-          {isMobileMenuOpen ? (
-            <X className="text-xl" />
-          ) : (
-            <Menu className="text-xl" />
-          )}
-        </button>
-      </header>
-
-      {/* Sidebar Navigation */}
-      <aside
-        id="sidebar"
-        className={`${
-          isMobileMenuOpen ? 'absolute' : 'hidden'
-        } lg:block lg:w-64 bg-white border-r border-gray-200 p-6 shadow-xl lg:shadow-none lg:fixed lg:top-0 lg:left-0 lg:h-screen z-10 overflow-y-auto`}
-      >
-        <div className="mb-8 flex items-center space-x-2">
-          <div className="text-3xl text-blue-600">⚡</div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#1f2937]">
-            Neviane
-          </h1>
-        </div>
-
-        <div className="space-y-2">
-          <nav className="space-y-1">
-            <SidebarLink
-              id="dashboard"
-              icon={Home}
-              label="Dashboard"
-              iconColor="text-blue-500"
-            />
-            <SidebarLink
-              id="inbox"
-              icon={Inbox}
-              label="Feedback Inbox"
-              iconColor="text-indigo-500"
-            />
-            <SidebarLink
-              id="recovery-setup"
-              icon={Bot}
-              label="AI Review Recovery Setup"
-              iconColor="text-teal-500"
-            />
-            <SidebarLink
-              id="winback"
-              icon={DollarSign}
-              label="WinBack System"
-              iconColor="text-green-500"
-            />
-            <SidebarLink
-              id="qr-system"
-              icon={QrCode}
-              label="QR Feedback System"
-              iconColor="text-purple-500"
-            />
-            <SidebarLink
-              id="cards"
-              icon={CreditCard}
-              label="Digital Business Cards"
-              iconColor="text-cyan-500"
-            />
-            <SidebarLink
-              id="alerts"
-              icon={Bell}
-              label="Alerts & Notifications"
-              iconColor="text-yellow-500"
-            />
-            <SidebarLink
-              id="staff"
-              icon={Users}
-              label="Staff Accounts"
-              iconColor="text-orange-500"
-            />
-          </nav>
-          <div className="pt-4 border-t border-gray-200">
-            <SidebarLink
-              id="billing"
-              icon={CreditCard}
-              label="Billing & Subscription"
-              iconColor="text-red-500"
-            />
-          </div>
-        </div>
-
-        <div className="mt-8 text-center border-t pt-4">
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mx-auto text-white font-bold text-sm mb-2">
-            TM
-          </div>
-          <p className="text-sm font-semibold text-[#1f2937]">Thomas Miller</p>
-          <p className="text-xs text-gray-500">Admin | Elite HVAC</p>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-grow p-4 sm:p-8 lg:ml-64">
-        {/* Dashboard Page */}
-        {activePage === 'dashboard' && (
-          <div id="dashboard" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-2">
-              Welcome Back, Thomas.
-            </h2>
-            <p className="text-gray-500 mb-8">
-              Performance overview for Elite Plumbing & HVAC Services.
-            </p>
-
-            {/* 4 Main Platform Feature Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
-                <Bot className="text-3xl text-teal-600 mb-3" />
-                <h3 className="text-xl font-bold text-[#1f2937] mb-1">
-                  AI Review Recovery
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Prevented 14 critical 1-star reviews this month.
-                </p>
-                <button
-                  className="text-sm mt-4 font-semibold text-teal-600 hover:text-teal-700 flex items-center"
-                  onClick={() => showPage('recovery-setup')}
-                >
-                  Setup Automation <ArrowRight className="ml-1 h-3 w-3" />
-                </button>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
-                <DollarSign className="text-3xl text-green-600 mb-3" />
-                <h3 className="text-xl font-bold text-[#1f2937] mb-1">
-                  AI WinBack System
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Successfully recovered 18 lost customers to date.
-                </p>
-                <button
-                  className="text-sm mt-4 font-semibold text-green-600 hover:text-green-700 flex items-center"
-                  onClick={() => showPage('winback')}
-                >
-                  Start Campaign <ArrowRight className="ml-1 h-3 w-3" />
-                </button>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
-                <QrCode className="text-3xl text-purple-600 mb-3" />
-                <h3 className="text-xl font-bold text-[#1f2937] mb-1">
-                  QR Feedback System
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Generated 88 new public review requests in October.
-                </p>
-                <button
-                  className="text-sm mt-4 font-semibold text-purple-600 hover:text-purple-700 flex items-center"
-                  onClick={() => showPage('qr-system')}
-                >
-                  Generate QR <ArrowRight className="ml-1 h-3 w-3" />
-                </button>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
-                <CreditCard className="text-3xl text-cyan-600 mb-3" />
-                <h3 className="text-xl font-bold text-[#1f2937] mb-1">
-                  Digital Business Cards
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Captured 46 new leads from eCard sharing last week.
-                </p>
-                <button
-                  className="text-sm mt-4 font-semibold text-cyan-600 hover:text-cyan-700 flex items-center"
-                  onClick={() => showPage('cards')}
-                >
-                  Manage Cards <ArrowRight className="ml-1 h-3 w-3" />
-                </button>
-              </div>
-            </div>
-
-            {/* KPI Widgets Section */}
-            <h3 className="text-2xl font-bold text-[#1f2937] mb-4">
-              Live Performance Metrics
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-white border border-gray-200 rounded-3xl p-5 border-t-4 border-red-500">
-                <p className="text-sm font-medium text-gray-500">
-                  Saved 1-Star Reviews
-                </p>
-                <p className="text-3xl font-extrabold text-[#1f2937] mt-1">14</p>
-                <p className="text-xs text-green-600 mt-1 flex items-center">
-                  <TrendingUp className="mr-1 h-3 w-3" /> +28% MoM
-                </p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-5 border-t-4 border-green-500">
-                <p className="text-sm font-medium text-gray-500">
-                  Recovered Customers
-                </p>
-                <p className="text-3xl font-extrabold text-[#1f2937] mt-1">18</p>
-                <p className="text-xs text-green-600 mt-1 flex items-center">
-                  <TrendingUp className="mr-1 h-3 w-3" /> +5% MoM
-                </p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-5 border-t-4 border-blue-500">
-                <p className="text-sm font-medium text-gray-500">Tickets Solved</p>
-                <p className="text-3xl font-extrabold text-[#1f2937] mt-1">62</p>
-                <p className="text-xs text-green-600 mt-1 flex items-center">
-                  <TrendingUp className="mr-1 h-3 w-3" /> +12% MoM
-                </p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-3xl p-5 border-t-4 border-gray-500">
-                <p className="text-sm font-medium text-gray-500">
-                  Avg. Response Time
-                </p>
-                <p className="text-3xl font-extrabold text-[#1f2937] mt-1">3.1h</p>
-                <p className="text-xs text-red-600 mt-1 flex items-center">
-                  <TrendingDown className="mr-1 h-3 w-3" /> -0.4h MoM
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Feedback Inbox Page */}
-        {activePage === 'inbox' && (
-          <div id="inbox" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              Unified Feedback Inbox
-            </h2>
-            <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-              <div className="lg:col-span-1 bg-white border border-gray-200 rounded-3xl p-6 mb-6 lg:mb-0">
-                <h3 className="text-xl font-bold text-[#1f2937] mb-4">
-                  Filters & Sources
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <label className="flex items-center space-x-3 font-medium text-red-600">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="rounded-lg text-red-600 focus:ring-red-500 w-5 h-5"
-                    />
-                    <span>Urgent (3)</span>
-                  </label>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      className="rounded-lg text-blue-600 focus:ring-blue-500 w-5 h-5"
-                    />
-                    <span>Needs Follow-Up (5)</span>
-                  </label>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      className="rounded-lg text-yellow-600 focus:ring-yellow-500 w-5 h-5"
-                    />
-                    <span>Angry / Frustrated (1)</span>
-                  </label>
-                  <div className="pt-3 mt-3 border-t border-gray-200">
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        defaultChecked
-                        className="rounded-lg text-blue-600 focus:ring-blue-500 w-5 h-5"
-                      />
-                      <span>Google Reviews (8)</span>
-                    </label>
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        className="rounded-lg text-blue-600 focus:ring-blue-500 w-5 h-5"
-                      />
-                      <span>Website Feedback (1)</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 bg-white border border-gray-200 rounded-3xl p-6">
-                <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-                  <h3 className="text-xl font-bold text-[#1f2937]">
-                    Conversation with Sarah L.{' '}
-                    <span className="text-sm font-normal text-red-500 ml-2">
-                      (1-Star, Urgent)
-                    </span>
-                  </h3>
-                  <div className="text-sm text-gray-500">Source: Google Review</div>
-                </div>
-
-                <div className="space-y-4 h-96 overflow-y-auto p-2 bg-gray-50 rounded-xl">
-                  <div className="flex justify-start">
-                    <div className="max-w-xs md:max-w-md bg-gray-200 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-800">
-                      The technician was 3 hours late and barely apologized.
-                      Unacceptable service when I took the day off work! I'm leaving
-                      a 1-star review.
-                      <p className="text-xs text-gray-500 mt-1 text-right">
-                        Oct 25, 10:30 AM
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-center text-xs text-gray-400 italic flex items-center justify-center">
-                    <Bot className="mr-1 h-3 w-3" /> AI Review Recovery Engaged.
-                    Status: Awaiting Staff Approval.
-                  </div>
-                  <div className="flex justify-end">
-                    <div className="max-w-xs md:max-w-md bg-blue-100 p-4 rounded-2xl rounded-br-none shadow-md border-l-4 border-blue-600 text-sm text-gray-800">
-                      <p className="font-bold text-blue-800 mb-1">
-                        AI Draft Response:
-                      </p>
-                      Dear Sarah, we deeply apologize for the extreme delay and the
-                      lack of courtesy shown by our technician. We have escalated this
-                      to management and will contact you immediately to schedule a
-                      priority repair and offer a full discount.
-                      <p className="text-xs text-blue-600 mt-2 text-right">
-                        Neviane AI
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-col gap-3">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center shadow-md transition">
-                    <CheckCircle className="mr-2 h-5 w-5" /> Approve AI Draft & Send
-                    Message
-                  </button>
-                  <div className="flex gap-3">
-                    <button className="bg-red-500 w-full text-white font-semibold py-3 px-6 rounded-xl hover:bg-red-600 transition">
-                      <Ban className="mr-2 h-5 w-5 inline" /> Decline & Draft Manually
-                    </button>
-                    <button className="bg-gray-200 w-full text-gray-800 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 transition">
-                      <Check className="mr-2 h-5 w-5 inline" /> Resolve Issue
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* AI Review Recovery Setup Page */}
-        {activePage === 'recovery-setup' && (
-          <div id="recovery-setup" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              AI Review Recovery System Setup
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                Automation Toggles
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <div>
-                    <p className="font-semibold text-[#1f2937]">Auto-Apology</p>
-                    <p className="text-sm text-gray-500">
-                      AI automatically drafts and sends the initial apology message.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={recoverySettings.autoApology}
-                    onChange={(checked) =>
-                      setRecoverySettings({ ...recoverySettings, autoApology: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <div>
-                    <p className="font-semibold text-[#1f2937]">Escalate to Owner</p>
-                    <p className="text-sm text-gray-500">
-                      If staff hasn't responded to a ticket in 48 hours, send an urgent
-                      owner alert.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={recoverySettings.escalateToOwner}
-                    onChange={(checked) =>
-                      setRecoverySettings({
-                        ...recoverySettings,
-                        escalateToOwner: checked,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <div>
-                    <p className="font-semibold text-[#1f2937]">
-                      Auto-Follow-Up (7 Days)
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Check back with the customer 7 days after issue is marked
-                      resolved.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={recoverySettings.autoFollowUp}
-                    onChange={(checked) =>
-                      setRecoverySettings({
-                        ...recoverySettings,
-                        autoFollowUp: checked,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <div>
-                    <p className="font-semibold text-[#1f2937]">Auto-Solution</p>
-                    <p className="text-sm text-gray-500">
-                      AI suggests a discount or replacement based on context (Needs
-                      Approval).
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={recoverySettings.autoSolution}
-                    onChange={(checked) =>
-                      setRecoverySettings({
-                        ...recoverySettings,
-                        autoSolution: checked,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#1f2937] mt-10 mb-6 border-b pb-3">
-                System Identity & Tone
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Preferred Response Tone
-                  </label>
-                  <select className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500">
-                    <option>Empathetic & Professional (Default)</option>
-                    <option>Casual & Friendly</option>
-                    <option>Formal & Concise</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Support Email for Outbound
-                  </label>
-                  <input
-                    type="email"
-                    defaultValue="support@elitehvac.com"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#1f2937] mt-10 mb-6 border-b pb-3">
-                Templates
-              </h3>
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition"
-                onClick={() => setIsTemplateModalOpen(true)}
-              >
-                <PenSquare className="mr-2 h-5 w-5 inline" /> Manage AI Templates
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* WinBack Page */}
-        {activePage === 'winback' && (
-          <div id="winback" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              AI WinBack Campaign Manager
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                Customer Segments
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="p-4 rounded-xl border-t-4 border-red-500 bg-red-50">
-                  <p className="text-3xl font-extrabold text-red-700">87</p>
-                  <p className="text-sm font-medium text-red-600">Lost Customers</p>
-                </div>
-                <div className="p-4 rounded-xl border-t-4 border-orange-500 bg-orange-50">
-                  <p className="text-3xl font-extrabold text-orange-700">121</p>
-                  <p className="text-sm font-medium text-orange-600">
-                    Inactive 60 Days
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl border-t-4 border-yellow-500 bg-yellow-50">
-                  <p className="text-3xl font-extrabold text-yellow-700">188</p>
-                  <p className="text-sm font-medium text-yellow-600">
-                    Inactive 30 Days
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl border-t-4 border-green-500 bg-green-50">
-                  <p className="text-3xl font-extrabold text-green-700">34</p>
-                  <p className="text-sm font-medium text-green-600">VIP Customers</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-[#1f2937] mb-4">
-                    New Campaign Configuration
-                  </h3>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Target Segment
-                  </label>
-                  <select
-                    value={winbackSegment}
-                    onChange={(e) => setWinbackSegment(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 mb-4"
-                  >
-                    <option value="lost">Lost Customers (87)</option>
-                    <option value="inactive60">Inactive 60 Days (121)</option>
-                  </select>
-
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    AI-Generated Incentive Suggestion
-                  </label>
-                  <div className="p-3 bg-gray-100 rounded-xl border border-gray-300 text-sm text-gray-700 mb-4 flex justify-between items-center">
-                    <span className="font-medium text-green-600 flex items-center">
-                      <Settings className="mr-2 h-4 w-4" /> Suggested: 20% Off Next
-                      Service
-                    </span>
-                    <button className="text-xs bg-blue-600 text-white font-semibold p-1 px-3 rounded-lg hover:bg-blue-700 transition">
-                      Apply
-                    </button>
-                  </div>
-
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    WinBack Message Content
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={winbackMessage}
-                    onChange={(e) => setWinbackMessage(e.target.value)}
-                    placeholder="Personalized message using customer data..."
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <div className="mt-6 flex flex-col gap-3">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition">
-                      <Calendar className="mr-2 h-5 w-5 inline" /> Schedule WinBack
-                      Campaign
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-inner">
-                  <h3 className="text-2xl font-bold text-[#1f2937] mb-4">
-                    Message Preview
-                  </h3>
-                  <div className="border border-blue-400 p-4 rounded-xl bg-blue-50 text-sm">
-                    <p className="font-bold text-blue-800 mb-2">
-                      To: [Customer Name] (SMS)
-                    </p>
-                    <p className="text-gray-700">
-                      Hi [Customer Name], it's been a while since your last service
-                      with Elite Plumbing. We value your business! We'd love to welcome
-                      you back with a special 20% discount on your next repair. Click
-                      here: [Trackable Link]
-                    </p>
-                  </div>
-                  <div className="mt-6 flex gap-3">
-                    <button className="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-green-600 transition">
-                      <Smartphone className="mr-2 h-5 w-5 inline" /> Send SMS
-                    </button>
-                    <button className="w-full bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-indigo-600 transition">
-                      <Mail className="mr-2 h-5 w-5 inline" /> Send Email
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* QR Feedback System Page */}
-        {activePage === 'qr-system' && (
-          <div id="qr-system" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              QR Feedback Funnel Generator
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 bg-white border border-gray-200 rounded-3xl p-8">
-                <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                  Customization & Paths
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Business Logo
-                    </label>
-                    <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center mb-2">
-                      <ImageIcon className="text-gray-500 h-6 w-6" />
-                    </div>
-                    <button className="text-sm text-blue-600 font-semibold hover:underline">
-                      Upload Logo
-                    </button>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Landing Page Color
-                    </label>
-                    <input
-                      type="color"
-                      value={qrColor}
-                      onChange={(e) => setQrColor(e.target.value)}
-                      className="w-full h-10 p-1 border border-gray-300 rounded-xl"
-                    />
-                  </div>
-                </div>
-
-                <h4 className="text-xl font-bold text-[#1f2937] mt-8 mb-4">
-                  Review Questions
-                </h4>
-                <p className="text-sm text-gray-500 mb-4">
-                  Customize the questions customers see before they are routed.
-                </p>
-
-                <h4 className="text-xl font-bold text-[#1f2937] mt-8 mb-4 border-t pt-4">
-                  Destinations (Two Paths)
-                </h4>
-                <div className="space-y-4">
-                  <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                    <p className="font-semibold text-green-700">
-                      Path 1: Positive Feedback (4/5 Stars) → Public
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Customers are immediately linked to your: **Google Review Link**
-                    </p>
-                  </div>
-                  <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-                    <p className="font-semibold text-red-700">
-                      Path 2: Negative Feedback (1-3 Stars) → Private
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Customers are redirected to the **Private Feedback Form**.
-                    </p>
-                    <p className="text-xs font-medium text-red-600 mt-2 flex items-center">
-                      <Lock className="mr-1 h-3 w-3" /> Prevents negative reviews from
-                      hitting public sites.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-1 bg-white border border-gray-200 rounded-3xl p-6 flex flex-col items-center">
-                <h3 className="text-2xl font-bold text-[#1f2937] mb-4">Live Preview</h3>
-                <div className="w-full max-w-sm aspect-square bg-white border border-gray-300 rounded-2xl shadow-lg flex flex-col items-center justify-center p-6">
-                  <div className="w-40 h-40 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500 font-bold text-3xl mb-4">
-                    <QrCode className="h-20 w-20" />
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">
-                    Scan for Feedback
-                  </p>
-                  <p className="text-xs text-gray-500">Elite Plumbing & HVAC</p>
-                </div>
-                <div className="mt-6 w-full">
-                  <button className="bg-blue-600 hover:bg-blue-700 w-full text-white font-semibold py-3 px-6 rounded-xl mb-3 shadow-md transition">
-                    <Download className="mr-2 h-5 w-5 inline" /> Download QR Code (PNG)
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Digital Business Cards Page */}
-        {activePage === 'cards' && (
-          <div id="cards" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              Digital Business Cards Management
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1 bg-white border border-gray-200 rounded-3xl p-6 flex flex-col items-center">
-                <h3 className="text-2xl font-bold text-[#1f2937] mb-4">Card Preview</h3>
-                <div className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center">
-                  <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-2xl font-bold mx-auto mb-3">
-                    JD
-                  </div>
-                  <h4 className="text-xl font-bold text-[#1f2937]">John Davis</h4>
-                  <p className="text-sm text-gray-500 mb-4">Senior Plumber</p>
-                  <div className="space-y-3 text-sm font-medium">
-                    <div className="flex items-center justify-center">
-                      <Phone className="w-5 text-blue-500 mr-2" />{' '}
-                      <span>(555) 500-1234</span>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <button className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-xl hover:bg-gray-300 transition text-sm">
-                      <QrCode className="mr-2 h-4 w-4 inline" /> Share via QR
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 bg-white border border-gray-200 rounded-3xl p-8">
-                <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                  Tracking Metrics
-                </h3>
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="p-4 rounded-xl border border-gray-200 text-center">
-                    <p className="text-3xl font-extrabold text-blue-700">189</p>
-                    <p className="text-sm text-gray-500">Card Clicks</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-gray-200 text-center">
-                    <p className="text-3xl font-extrabold text-cyan-700">46</p>
-                    <p className="text-sm text-gray-500">Leads Saved</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-gray-200 text-center">
-                    <p className="text-3xl font-extrabold text-green-700">11</p>
-                    <p className="text-sm text-gray-500">QR Shares</p>
-                  </div>
-                </div>
-
-                <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                  Card Settings
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Add Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={cardPhone}
-                      onChange={(e) => setCardPhone(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Add Email
-                    </label>
-                    <input
-                      type="email"
-                      value={cardEmail}
-                      onChange={(e) => setCardEmail(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition">
-                      <Save className="mr-2 h-5 w-5 inline" /> Save Card Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Alerts & Notifications Page */}
-        {activePage === 'alerts' && (
-          <div id="alerts" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              Alerts & Notification Preferences
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                Notification Toggles
-              </h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl">
-                  <div>
-                    <p className="font-semibold text-[#1f2937] flex items-center">
-                      <AlertTriangle className="text-red-500 mr-2 h-5 w-5" /> Urgent Issue
-                      Alerts
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      1-Star Private Feedback requiring owner action.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={alertSettings.urgentAlerts}
-                    onChange={(checked) =>
-                      setAlertSettings({ ...alertSettings, urgentAlerts: checked })
-                    }
-                  />
-                </div>
-                <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl">
-                  <div>
-                    <p className="font-semibold text-[#1f2937] flex items-center">
-                      <Bell className="text-yellow-500 mr-2 h-5 w-5" /> New Negative
-                      Feedback (Public)
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      For 3-star reviews or lower on Google/Yelp.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={alertSettings.negativeFeedback}
-                    onChange={(checked) =>
-                      setAlertSettings({
-                        ...alertSettings,
-                        negativeFeedback: checked,
-                      })
-                    }
-                  />
-                </div>
-                <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl">
-                  <div>
-                    <p className="font-semibold text-[#1f2937] flex items-center">
-                      <Users className="text-orange-500 mr-2 h-5 w-5" /> Staff Assignment
-                      Alerts
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      When a conversation is assigned to a staff member.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    checked={alertSettings.staffAssignment}
-                    onChange={(checked) =>
-                      setAlertSettings({
-                        ...alertSettings,
-                        staffAssignment: checked,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="pt-8 mt-8 border-t border-gray-200">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition">
-                  <Save className="mr-2 h-5 w-5 inline" /> Save Notification Preferences
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Staff Accounts Page */}
-        {activePage === 'staff' && (
-          <div id="staff" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              Staff Accounts & Permissions
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-3xl p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-[#1f2937]">Active Staff (3)</h3>
-                <button className="bg-green-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-green-600 transition">
-                  <User className="mr-2 h-5 w-5 inline" /> Add New Staff
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Staff Member
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Performance
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="font-semibold text-[#1f2937]">Thomas Miller</p>
-                        <p className="text-xs text-gray-500">thomas@elitehvac.com</p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
-                        Owner / Admin
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">N/A</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="#" className="text-blue-600 hover:text-blue-900">
-                          <Edit className="h-4 w-4 inline" />
-                        </a>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="font-semibold text-[#1f2937]">John Davis</p>
-                        <p className="text-xs text-gray-500">john@elitehvac.com</p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                        Support Agent
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        28 Solved, Avg. 1.2h response
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="#" className="text-blue-600 hover:text-blue-900">
-                          <Edit className="h-4 w-4 inline" />
-                        </a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#1f2937] mt-10 mb-6 border-b pb-3">
-                Activity Log
-              </h3>
-              <ul className="space-y-3 text-sm text-gray-700">
-                <li className="p-3 bg-gray-50 rounded-xl flex items-center">
-                  <CheckCircle className="text-green-500 mr-3 h-5 w-5" /> John Davis
-                  marked Ticket #9045 as resolved.
-                </li>
-                <li className="p-3 bg-gray-50 rounded-xl flex items-center">
-                  <UserCog className="text-blue-500 mr-3 h-5 w-5" /> Thomas Miller
-                  updated John Davis's permissions.
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Billing & Subscription Page */}
-        {activePage === 'billing' && (
-          <div id="billing" className="app-page">
-            <h2 className="text-4xl font-extrabold text-[#1f2937] mb-8">
-              Billing & Subscription
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-[#1f2937] mb-6 border-b pb-3">
-                Current Plan & Usage
-              </h3>
-
-              <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl mb-8">
-                <p className="text-lg font-bold text-blue-800">
-                  Enterprise Pro - <span className="text-2xl font-extrabold">$299.00/Month</span>
-                </p>
-                <p className="text-sm text-blue-700 mt-1">
-                  Unlimited AI Recovery, 1,000 WinBack SMS/Email credits.
-                </p>
-                <button className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-800">
-                  Change Plan
-                </button>
-              </div>
-
-              <h4 className="text-xl font-bold text-[#1f2937] mb-4">Usage Breakdown</h4>
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl border border-gray-200">
-                  <p className="text-sm font-medium text-gray-500">Twilio (SMS) Usage</p>
-                  <p className="text-3xl font-extrabold text-[#1f2937] mt-1">
-                    42 / 500 Credits
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div
-                      className="bg-red-500 h-2.5 rounded-full"
-                      style={{ width: '8%' }}
-                    />
-                  </div>
-                </div>
-                <div className="p-4 rounded-xl border border-gray-200">
-                  <p className="text-sm font-medium text-gray-500">
-                    AI Tokens Used (Review Recovery)
-                  </p>
-                  <p className="text-3xl font-extrabold text-[#1f2937] mt-1">12% of Quota</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div
-                      className="bg-green-500 h-2.5 rounded-full"
-                      style={{ width: '12%' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#1f2937] mt-10 mb-6 border-b pb-3">
-                Monthly Cost Breakdown
-              </h3>
-              <ul className="text-sm space-y-2">
-                <li className="flex justify-between border-b pb-1">
-                  <span>Subscription Fee</span>
-                  <span className="font-semibold">$299.00</span>
-                </li>
-                <li className="flex justify-between border-b pb-1">
-                  <span>Twilio Overages</span>
-                  <span className="font-semibold">$0.00</span>
-                </li>
-                <li className="flex justify-between border-b pb-1">
-                  <span>Staff Licenses (3)</span>
-                  <span className="font-semibold">$0.00</span>
-                </li>
-                <li className="flex justify-between pt-2 text-lg font-bold">
-                  <span>Total Due</span>
-                  <span className="text-blue-600">$299.00</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Template Modal */}
-      {isTemplateModalOpen && (
-        <div
-          className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4"
-          onClick={() => setIsTemplateModalOpen(false)}
-        >
-          <div
-            className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg p-8 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-900">Feedback Inbox</h2>
+      <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto pb-2">
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
+              activeTab === tab ? 'border-b-2 border-blue-600 text-blue-700 font-semibold' : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            <h3 className="text-2xl font-bold text-[#1f2937] mb-4">
-              Manage AI Templates
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Edit the base templates used by the AI before it drafts a personalized
-              response.
-            </p>
+            {tab}
+          </button>
+        ))}
+      </div>
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Negative Feedback Message Template
-            </label>
-            <textarea
-              rows={6}
-              defaultValue="Dear [CUSTOMER_NAME], we deeply apologize for the negative experience you reported. We have already escalated this to our team and will contact you within 2 hours to resolve the issue personally. Thank you for giving us a chance to make it right. - [BUSINESS_NAME] Team."
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-sm mb-4"
-            />
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setIsTemplateModalOpen(false)}
-                className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-xl hover:bg-gray-300 transition"
-              >
-                Cancel
-              </button>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition">
-                <Save className="mr-2 h-4 w-4 inline" /> Save All Templates
-              </button>
+      <div className="space-y-4">
+        {filteredFeedback.length > 0 ? filteredFeedback.map(item => (
+          <div key={item.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-blue-400 flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="flex-grow space-y-1 mb-3 md:mb-0">
+              <div className="flex items-center space-x-3">
+                <p className="text-lg font-bold text-gray-900">{item.name || 'Anonymous Customer'}</p>
+                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${statusColors[item.status] || 'bg-gray-100 text-gray-800'}`}>
+                  {item.status}
+                </span>
+                <div className="flex items-center text-yellow-500 text-sm">
+                  {Array(item.rating).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 fill-yellow-500" />)}
+                  {Array(5 - item.rating).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 text-gray-300" />)}
+                </div>
+              </div>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">AI Summary:</span> {item.summary}
+              </p>
+              <span className="text-xs text-gray-500 block">{item.date}</span>
+            </div>
+            <div className="flex space-x-2 flex-wrap md:flex-nowrap flex-shrink-0">
+              <button className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 mb-1 md:mb-0">View Thread</button>
+              <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-1 md:mb-0">Recover With AI</button>
+              <button className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600">Mark Resolved</button>
             </div>
           </div>
-        </div>
-      )}
+        )) : (
+          <p className="text-center p-8 bg-white rounded-xl shadow-md text-gray-500">No feedback items match this filter.</p>
+        )}
+      </div>
     </div>
   );
 };
 
-export default DashboardPage;
+const AIRecoveryCenter = ({ cases }: { cases: typeof MOCK_RECOVERY_CASES }) => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-gray-900">AI Recovery Center</h2>
+
+    {/* Settings Toggles */}
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">AI Recovery Settings</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <label className="flex items-center cursor-pointer">
+          <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-600 rounded-lg border-gray-300" />
+          <span className="ml-2 text-gray-700 font-medium">Auto-apology: ON</span>
+        </label>
+        <label className="flex items-center cursor-pointer">
+          <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-600 rounded-lg border-gray-300" />
+          <span className="ml-2 text-gray-700 font-medium">Auto-solution: ON</span>
+        </label>
+        <div className="col-span-full sm:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Auto-follow-up:</label>
+          <select className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+            <option>24h</option>
+            <option>48h (Recommended)</option>
+            <option>72h</option>
+          </select>
+        </div>
+        <div className="col-span-full">
+          <p className="text-sm font-medium text-gray-700 mb-2">Auto-request review only if:</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer says "Thank you"</span></label>
+            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer gives thumbs up</span></label>
+            <label className="flex items-center"><input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 rounded" /><span className="ml-2 text-sm text-gray-700">Customer marks it "resolved"</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Case List */}
+    <div className="space-y-4">
+      {cases.map(c => (
+        <div key={c.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500">
+          <div className="flex justify-between items-start mb-3">
+            <h4 className="text-xl font-bold text-gray-900">Case #{c.id}: {c.customer}</h4>
+            <span className="px-3 py-1 text-sm font-semibold bg-indigo-100 text-indigo-800 rounded-full">{c.status}</span>
+          </div>
+          <p className="text-gray-600 mb-3 font-semibold">Problem summary: <span className="font-normal">{c.summary}</span></p>
+
+          <div className="bg-gray-50 p-3 rounded-lg border mb-4">
+            <p className="font-semibold text-sm">AI Drafted Apology:</p>
+            <p className="text-sm text-gray-700 italic">"Dear {c.customer}, please accept our deepest apologies for the issue you experienced. We take this very seriously and have drafted a personalized response for your approval..."</p>
+          </div>
+
+          <div className="flex flex-wrap space-x-2 mt-2">
+            <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition mb-2">Approve + Send</button>
+            <button className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition mb-2">Edit Message</button>
+            <button className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition mb-2">Escalate to Owner</button>
+            <button className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition mb-2">Mark Resolved</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const WinBackEngine = ({ analytics }: { analytics: typeof MOCK_WINBACK_ANALYTICS }) => (
+  <div className="space-y-8">
+    <h2 className="text-3xl font-bold text-gray-900">Win-Back Engine</h2>
+
+    {/* Win-Back Analytics */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <WidgetCard title="Win-Backs Attempted" value={analytics.attempted} icon={BarChart3} color="text-purple-600" />
+      <WidgetCard title="Win-Backs Converted" value={analytics.converted} unit={` (${((analytics.converted / analytics.attempted) * 100).toFixed(1)}%)`} icon={Handshake} color="text-green-600" />
+      <WidgetCard title="Revenue Saved (AI Estimate)" value={analytics.revenueSaved} icon={DollarSign} color="text-blue-600" unit="$" />
+    </div>
+
+    {/* Win-Back Stages Visualization */}
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Win-Back Flow Stages (Visible Timeline)</h3>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch space-y-4 sm:space-y-0 sm:space-x-4 text-sm">
+        <div className="text-center p-3 bg-purple-50 rounded-lg flex-1">
+          <p className="font-bold text-purple-600">Day 0</p>
+          <p className="text-gray-600">AI apology + fix</p>
+        </div>
+        <div className="text-center p-3 bg-purple-50 rounded-lg flex-1">
+          <p className="font-bold text-purple-600">Day 2</p>
+          <p className="text-gray-600">Check-in message</p>
+        </div>
+        <div className="text-center p-3 bg-purple-50 rounded-lg flex-1">
+          <p className="font-bold text-purple-600">Day 5</p>
+          <p className="text-gray-600">Incentive message</p>
+        </div>
+        <div className="text-center p-3 bg-purple-50 rounded-lg flex-1">
+          <p className="font-bold text-purple-600">Day 7</p>
+          <p className="text-gray-600">Final "Make it right"</p>
+        </div>
+      </div>
+      <p className="mt-4 text-xs italic text-gray-500 text-center">Only if happy: Ask for review</p>
+    </div>
+
+    {/* Controls */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Win-Back Controls</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <label className="flex items-center text-gray-700">
+            <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-600 rounded-lg border-gray-300" />
+            <span className="ml-2 font-medium">Incentive ON/OFF</span>
+          </label>
+          <label className="block text-sm font-medium text-gray-700">Incentive Type</label>
+          <select className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm text-sm p-2">
+            <option>Discount</option>
+            <option>Free Drink</option>
+            <option>10% Off Next Visit</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Follow-up Interval</label>
+          <select className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm text-sm p-2">
+            <option>1–7 days (Standard)</option>
+            <option>3 days</option>
+            <option>7 days (Long)</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Tone of Voice</label>
+          <select className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm text-sm p-2">
+            <option>Friendly</option>
+            <option>Professional</option>
+            <option>Short & direct</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ReviewManager = () => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-gray-900">Review Manager</h2>
+
+    {/* Filters */}
+    <div className="bg-white p-4 rounded-xl shadow-lg flex flex-wrap gap-3 text-sm">
+      <select className="p-2 border rounded-lg">
+        <option>All Platforms</option>
+        <option>Google</option>
+        <option>Yelp</option>
+        <option>Facebook</option>
+      </select>
+      <select className="p-2 border rounded-lg">
+        <option>All Ratings</option>
+        <option>1 Star</option>
+        <option>5 Star</option>
+      </select>
+      <button className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">Angry / Urgent (4)</button>
+      <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Spam (1)</button>
+    </div>
+
+    {/* Business Impact Widget */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Business Impact Widget</h3>
+      <div className="grid grid-cols-3 gap-4">
+        <WidgetCard title="1-Star Prevented This Week" value={1} icon={Gavel} color="text-red-500" />
+        <WidgetCard title="Estimated Savings" value={'$350'} icon={DollarSign} color="text-green-500" />
+        <WidgetCard title="Average Rating Trend" value={'4.6/5'} icon={BarChart3} color="text-yellow-500" />
+      </div>
+    </div>
+
+    <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-400">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Incoming Reviews (Mock Example)</h3>
+      <p className="text-gray-500 font-medium mb-2">Platform: Google | Rating: ⭐⭐⭐⭐⭐ | Customer: Jane D.</p>
+      <p className="text-gray-700 mb-3 italic">"Best service ever! The cashier, Sarah, was so friendly and helpful. Definitely recommend this location."</p>
+
+      <div className="bg-gray-50 p-3 rounded-lg border mt-3">
+        <p className="font-semibold text-sm mb-2">AI Suggested Response</p>
+        <p className="text-sm italic text-gray-700">"Thank you so much, Jane! We're thrilled to hear about your great experience, and we will be sure to pass your kind words along to Sarah! We look forward to seeing you again soon."</p>
+      </div>
+      <div className="flex space-x-2 mt-4">
+        <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Publish Response</button>
+        <button className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Edit Response</button>
+      </div>
+    </div>
+  </div>
+);
+
+const QRCodesAndCards = () => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-gray-900">QR Codes & eBusiness Cards</h2>
+
+    {/* QR Section */}
+    <div className="bg-white p-6 rounded-xl shadow-lg grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="text-center p-4 border rounded-xl shadow-sm">
+        <div className="w-32 h-32 bg-blue-50 mx-auto mb-3 flex items-center justify-center text-blue-600 rounded-lg">
+          <QrCode className="h-16 w-16" />
+        </div>
+        <p className="font-bold mb-1">Feedback QR (Main)</p>
+        <p className="text-sm text-gray-500 mb-3">Collects private complaints. (Scans: 450)</p>
+        <button className="text-sm font-semibold text-blue-600 hover:text-blue-800">Download PNG/JPG</button>
+      </div>
+      <div className="text-center p-4 border rounded-xl shadow-sm">
+        <div className="w-32 h-32 bg-yellow-50 mx-auto mb-3 flex items-center justify-center text-yellow-600 rounded-lg">
+          <Star className="h-16 w-16 fill-yellow-600" />
+        </div>
+        <p className="font-bold mb-1">Review QR (Happy Customers)</p>
+        <p className="text-sm text-gray-500 mb-3">Directs to Google/Yelp. (Conversions: 22)</p>
+        <button className="text-sm font-semibold text-blue-600 hover:text-blue-800">Track Conversions</button>
+      </div>
+      <div className="text-center p-4 border rounded-xl shadow-sm">
+        <div className="w-32 h-32 bg-green-50 mx-auto mb-3 flex items-center justify-center text-green-600 rounded-lg">
+          <User className="h-16 w-16" />
+        </div>
+        <p className="font-bold mb-1">Staff Business Card QR</p>
+        <p className="text-sm text-gray-500 mb-3">One-tap contact save.</p>
+        <button className="text-sm font-semibold text-blue-600 hover:text-blue-800">Manage Staff Cards</button>
+      </div>
+    </div>
+
+    {/* eBusiness Cards Section */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">eBusiness Card Preview (Staff)</h3>
+      <div className="max-w-xs p-5 mx-auto border-2 border-gray-100 rounded-xl shadow-inner text-center bg-white">
+        <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-2 flex items-center justify-center">
+          <User className="h-8 w-8 text-gray-600" />
+        </div>
+        <p className="font-bold text-lg">Sarah Jenkins</p>
+        <p className="text-sm text-gray-500">Shift Manager | <span className="text-green-600">Smart auto-follow-up: ON</span></p>
+        <p className="mt-2 text-sm">Phone: 555-0199 | Email: sarah@example.com</p>
+        <div className="mt-4 space-y-2">
+          <button className="w-full py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">One-tap Save Contact</button>
+          <button className="w-full py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">One-tap Review Link</button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const OwnerSettings = () => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-gray-900">Owner Settings & Configuration</h2>
+
+    {/* Business Profile */}
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-400">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Business Profile</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div><span className="font-semibold">Business Name:</span> Neviane AI Shop</div>
+        <div><span className="font-semibold">Location(s):</span> 1 Active (New York)</div>
+        <div><span className="font-semibold">Operating Hours:</span> 9am - 5pm EST</div>
+        <div><span className="font-semibold">Contact Info:</span> owner@neviane.com / 555-1234</div>
+        <button className="col-span-full text-sm text-blue-600 hover:text-blue-800 text-left mt-2 font-medium">Edit Profile Details</button>
+      </div>
+    </div>
+
+    {/* AI Settings */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">AI Settings & Rules</h3>
+      <div className="space-y-3 text-sm">
+        <p><span className="font-semibold">Tone of voice:</span> Professional/Empathetic</p>
+        <p><span className="font-semibold">Follow-up schedule:</span> 48 Hours</p>
+        <p><span className="font-semibold">Review request rules:</span> ON (Conditional)</p>
+        <p><span className="font-semibold">Auto-escalation:</span> Email/SMS for 1-star reviews to Manager/Owner</p>
+        <button className="text-sm text-blue-600 hover:text-blue-800 text-left mt-2 font-medium">Configure AI Rules</button>
+      </div>
+    </div>
+
+    {/* Communication Settings */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Communication Settings</h3>
+      <div className="space-y-3 text-sm">
+        <p><span className="font-semibold">SMS sender ID:</span> NEVIANE-AI</p>
+        <p><span className="font-semibold">Email sender:</span> notifications@neviane.com</p>
+        <p><span className="font-semibold">Opt-out language:</span> Auto-added to all SMS/Email</p>
+        <button className="text-sm text-blue-600 hover:text-blue-800 text-left mt-2 font-medium">Manage Senders</button>
+      </div>
+    </div>
+
+    {/* Integrations */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Integrations</h3>
+      <div className="flex flex-wrap gap-6">
+        <div className="text-center">
+          <div className="text-4xl text-green-500 mb-1">G</div>
+          <p className="text-sm font-medium">Google (Connected)</p>
+        </div>
+        <div className="text-center">
+          <div className="text-4xl text-red-500 mb-1">Y</div>
+          <p className="text-sm">Yelp</p>
+          <button className="text-xs text-blue-600">Connect</button>
+        </div>
+        <div className="text-center">
+          <div className="text-4xl text-blue-800 mb-1">f</div>
+          <p className="text-sm">Facebook</p>
+          <button className="text-xs text-blue-600">Connect</button>
+        </div>
+        <div className="text-center">
+          <Mail className="h-10 w-10 text-blue-500 mx-auto mb-1" />
+          <p className="text-sm font-medium">Twilio (Connected)</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Team/Staff */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Team / Staff</h3>
+      <p className="text-sm font-semibold mb-2">3 Total Members</p>
+      <div className="space-y-2">
+        <div className="flex justify-between items-center py-2 border-b">
+          <p className="font-semibold">John Doe (Owner)</p>
+          <p className="text-sm text-blue-600">Owner</p>
+          <p className="text-xs text-gray-500">Alerts: Phone/Email</p>
+          <button className="text-blue-500 text-sm hover:text-blue-700">Edit</button>
+        </div>
+        <div className="flex justify-between items-center py-2 border-b">
+          <p className="font-semibold">Alice (ID: 4321)</p>
+          <p className="text-sm text-green-600">Manager</p>
+          <p className="text-xs text-gray-500">Alerts: Email</p>
+          <button className="text-blue-500 text-sm hover:text-blue-700">Edit</button>
+        </div>
+      </div>
+      <button className="mt-3 text-blue-600 font-semibold text-sm">Add/Invite New Team Member</button>
+    </div>
+  </div>
+);
+
+const AnalyticsView = () => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-gray-900">Analytics & ROI Dashboard</h2>
+
+    {/* ROI Dashboard */}
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">ROI Dashboard (Return on Investment)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <WidgetCard title="Customers Saved" value={22} icon={Users} color="text-indigo-600" />
+        <WidgetCard title="Estimated Revenue Saved" value={'3,120'} icon={DollarSign} color="text-green-600" unit="$" />
+        <WidgetCard title="Staff Hours Replaced" value={160} icon={Clock} color="text-orange-600" unit="h" />
+      </div>
+    </div>
+
+    {/* Graphs Placeholder */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Performance Graphs</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-40 bg-gray-100 rounded-lg p-4 text-gray-500 flex items-center justify-center">
+          <p>Placeholder: Sentiment Trend (Positive/Negative)</p>
+        </div>
+        <div className="h-40 bg-gray-100 rounded-lg p-4 text-gray-500 flex items-center justify-center">
+          <p>Placeholder: Google Rating Trends (4.2 → 4.6)</p>
+        </div>
+        <div className="h-40 bg-gray-100 rounded-lg p-4 text-gray-500 flex items-center justify-center">
+          <p>Placeholder: Recovery Rate vs. Win-Back Rate</p>
+        </div>
+        <div className="h-40 bg-gray-100 rounded-lg p-4 text-gray-500 flex items-center justify-center">
+          <p>Placeholder: Staff Performance (Response Speed)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SuperAdminDashboard = () => (
+  <div className="space-y-6">
+    <h2 className="text-3xl font-bold text-red-700">🔐 Super Admin Control Panel</h2>
+    <p className="text-red-500 font-semibold italic">This interface is for Neviane platform administrators only.</p>
+
+    {/* System Management */}
+    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-500">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">System Management</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <button className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">Kill Switch (AI Module)</button>
+        <button className="px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium">Error/Activity Logs</button>
+        <button className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Billing Dashboard</button>
+        <button className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">Global AI Prompts</button>
+        <button className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">SMS Cost Controls</button>
+        <button className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">GPT Billing Insights</button>
+      </div>
+    </div>
+
+    {/* User Management */}
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">User & API Metrics</h3>
+      <div className="space-y-2 text-sm">
+        <p><span className="font-semibold">User Count:</span> 1,240 Active</p>
+        <p><span className="font-semibold">Highest API Cost User:</span> User ID 99283 ($14.50/day)</p>
+        <p><span className="font-semibold">Subscription Status:</span> 98% Active</p>
+        <button className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium">Manage User Accounts</button>
+      </div>
+    </div>
+  </div>
+);
+
+// --- MAIN DASHBOARD COMPONENT ---
+
+export default function DashboardPage() {
+  const { auth } = usePage().props as any;
+  const currentUser = auth?.user;
+  const [view, setView] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Determine user role (you can adjust this based on your user model)
+  const userRole = currentUser?.role || 'owner';
+
+  const handleSignOut = async () => {
+    // Clear authentication data
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth:token');
+      localStorage.removeItem('auth:user');
+      sessionStorage.removeItem('auth:token');
+      sessionStorage.removeItem('auth:user');
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    window.location.href = '/auth0/logout?' + new Date().getTime();
+  };
+
+  const renderContent = () => {
+    switch (view) {
+      case 'dashboard':
+        return <DashboardOverview setView={setView} stats={MOCK_DASHBOARD_STATS} />;
+      case 'inbox':
+        return <FeedbackInbox feedback={MOCK_FEEDBACK} />;
+      case 'recovery':
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <AIRecoveryCenter cases={MOCK_RECOVERY_CASES} />;
+        return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the AI Recovery Center.</div>;
+      case 'winback':
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <WinBackEngine analytics={MOCK_WINBACK_ANALYTICS} />;
+        return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the Win-Back Engine.</div>;
+      case 'reviews':
+        return <ReviewManager />;
+      case 'cards':
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <QRCodesAndCards />;
+        return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for QR Code Management.</div>;
+      case 'settings':
+        if (['owner', 'admin'].includes(userRole)) return <OwnerSettings />;
+        return <div className="p-10 text-center text-red-500">Access Denied: Only Owners can manage Settings.</div>;
+      case 'analytics':
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <AnalyticsView />;
+        return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for Analytics.</div>;
+      case 'admin':
+        if (userRole === 'admin') return <SuperAdminDashboard />;
+        return <div className="p-10 text-center text-red-500">Access Denied: You do not have Super Admin privileges.</div>;
+      default:
+        return <DashboardOverview setView={setView} stats={MOCK_DASHBOARD_STATS} />;
+    }
+  };
+
+  const pageTitle = NAV_ITEMS(userRole).find(item => item.id === view)?.label || 'Dashboard';
+
+  return (
+    <div className="min-h-screen flex bg-gray-50 font-sans">
+      {/* Sidebar */}
+      <Sidebar
+        currentView={view}
+        setView={setView}
+        userRole={userRole}
+        handleSignOut={handleSignOut}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        currentUser={currentUser}
+      />
+
+      {/* Content Area */}
+      <div className="flex-1 lg:ml-64 flex flex-col transition-all duration-300">
+        <header className="bg-white shadow-md p-4 sticky top-0 z-20 flex items-center justify-between lg:justify-start border-b border-gray-200">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <h1 className="text-2xl font-semibold text-gray-800 ml-4">{pageTitle}</h1>
+          <div className="lg:ml-auto">
+            <span className="text-sm font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full hidden sm:inline-block capitalize">
+              {userRole} View
+            </span>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          {renderContent()}
+        </main>
+      </div>
+    </div>
+  );
+}
 

@@ -9,37 +9,64 @@ import { RecoveryCustomerPanel } from './RecoveryCustomerPanel';
 import { RecoveryAiComposer } from './RecoveryAiComposer';
 import { RecoveryTimelineMessage } from './RecoveryTimelineMessage';
 import { RecoveryFollowUpModal } from './RecoveryFollowUpModal';
-import { MOCK_RECOVERY_TICKETS, MOCK_RECOVERY_STATS, MOCK_RECOVERY_CUSTOMER_DATA } from '../../data/mockData';
+import { RecoveryModal } from './RecoveryModal';
+import { AutomationSettingsView } from './AutomationSettingsView';
+import { MOCK_RECOVERY_CASES, MOCK_RECOVERY_STATS, MOCK_RECOVERY_CUSTOMER_DATA } from '../../data/mockData';
+
+// Initial automation settings
+const initialAutomationSettings = {
+  enabled: {
+    autoRecovery: true,
+    autoWinBack: true,
+    autoReferral: true,
+  },
+  messages: {
+    autoRecovery: "Hi [Customer Name], my name is [Manager Name], and I personally apologize for your experience. We are issuing a full refund and would like to invite you back with a [Incentive] to show you our true quality. We will call you within 24 hours to discuss this further.",
+    autoWinBack: "Hello [Customer Name], I hope everything has been resolved to your satisfaction. As a gesture of goodwill, please accept a [Incentive] for your next visit. We truly value your business and hope to see you soon! - [Manager Name]",
+    autoReferral: "Hi [Customer Name], thank you so much for the 5-star feedback! We're thrilled you had a great time. Would you consider passing along a special offer to a friend? It would mean a lot to our team! Best, [Staff Name]",
+  },
+  schedule: {
+    winBack: '72h',
+    referral: '7d',
+  }
+};
 
 export const AIRecoveryCenter: React.FC = () => {
-  const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
-  const [allTickets, setAllTickets] = useState(MOCK_RECOVERY_TICKETS);
-  const [automationSettings, setAutomationSettings] = useState({
-    autoRecovery: false,
-    autoReferral: false,
-  });
+  const [currentRoute, setCurrentRoute] = useState<string | null>(null);
+  const [allCases, setAllCases] = useState(MOCK_RECOVERY_CASES);
+  const [automationSettings, setAutomationSettings] = useState(initialAutomationSettings);
 
-  const setRoute = (ticketId: string | null) => {
-    setCurrentTicketId(ticketId);
+  const setRoute = (route: string | null) => {
+    setCurrentRoute(route);
   };
 
-  const updateTicket = (updatedFields: any) => {
-    setAllTickets(prevTickets => 
-      prevTickets.map(t => t.id === updatedFields.id ? { ...t, ...updatedFields } : t)
+  const updateCase = (updatedFields: any) => {
+    setAllCases(prevCases => 
+      prevCases.map(c => c.id === updatedFields.id ? { ...c, ...updatedFields } : c)
     );
   };
 
-  const updateAutomationSettings = (newSettings: any) => {
+  const updateAutomationSettingsHandler = (newSettings: any) => {
     setAutomationSettings(newSettings);
     console.log('Automation settings updated:', newSettings);
   };
 
-  if (currentTicketId) {
+  if (currentRoute === 'automationSettings') {
+    return (
+      <AutomationSettingsView
+        setRoute={setRoute}
+        automationSettings={automationSettings}
+        updateAutomationSettings={updateAutomationSettingsHandler}
+      />
+    );
+  }
+
+  if (currentRoute) {
     return (
       <RecoveryConversationView
-        ticketId={currentTicketId}
+        recoveryCaseId={currentRoute}
         setRoute={setRoute}
-        updateTicket={updateTicket}
+        updateCase={updateCase}
         automationSettings={automationSettings}
       />
     );
@@ -47,40 +74,38 @@ export const AIRecoveryCenter: React.FC = () => {
 
   return (
     <RecoveryInboxView
-      tickets={allTickets}
+      cases={allCases}
       stats={MOCK_RECOVERY_STATS}
       setRoute={setRoute}
       automationSettings={automationSettings}
-      updateAutomationSettings={updateAutomationSettings}
     />
   );
 };
 
 const RecoveryInboxView = ({
-  tickets,
+  cases,
   stats,
   setRoute,
   automationSettings,
-  updateAutomationSettings,
 }: {
-  tickets: typeof MOCK_RECOVERY_TICKETS;
+  cases: typeof MOCK_RECOVERY_CASES;
   stats: typeof MOCK_RECOVERY_STATS;
-  setRoute: (id: string | null) => void;
-  automationSettings: { autoRecovery: boolean; autoReferral: boolean };
-  updateAutomationSettings: (settings: any) => void;
+  setRoute: (route: string | null) => void;
+  automationSettings: typeof initialAutomationSettings;
 }) => {
   const [filters, setFilters] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [showConfirmation, setShowConfirmation] = useState<string | null>(null);
 
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = ticket.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCases = cases.filter(recoveryCase => {
+    if (!recoveryCase) return false;
+    const matchesSearch = recoveryCase.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recoveryCase.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
-    if (filters.status && ticket.status !== filters.status) return false;
+    if (filters.status && recoveryCase.status !== filters.status) return false;
     const ratingFilter = filters.rating ? parseInt(filters.rating, 10) : null;
-    if (ratingFilter && ticket.rating !== ratingFilter) return false;
-    if (filters.channel && ticket.channel !== filters.channel) return false;
+    if (ratingFilter && recoveryCase.rating !== ratingFilter) return false;
+    if (filters.channel && recoveryCase.channel !== filters.channel) return false;
     return true;
   });
 
@@ -89,11 +114,13 @@ const RecoveryInboxView = ({
     let message = '';
 
     if (type === 'winBack') {
-      count = tickets.filter(t => t.status === 'Resolved' && t.rating <= 3).length;
-      message = `Win Back Campaign (personalized email/sms) initiated for ${count} resolved 1-3 star customers!`;
+      count = cases.filter(t => t.status === 'Resolved' && t.rating >= 1 && t.rating <= 4).length;
+      const schedule = automationSettings.schedule.winBack;
+      message = `Win Back Campaign (1-4★) initiated for ${count} resolved customers, scheduled for ${schedule}!`;
     } else if (type === 'referral') {
-      count = tickets.filter(t => t.rating === 5).length;
-      message = `Personal Referral Campaign initiated for ${count} 5-star customers!`;
+      count = cases.filter(t => t.rating === 5).length;
+      const schedule = automationSettings.schedule.referral;
+      message = `Personal Referral Campaign (5★) initiated for ${count} customers, scheduled for ${schedule}!`;
     }
 
     if (count > 0) {
@@ -108,7 +135,7 @@ const RecoveryInboxView = ({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-6">AI Recovery Inbox</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-6">AI Recovery Case Inbox</h1>
       
       <RecoveryStatsWidget stats={stats} />
       
@@ -120,24 +147,24 @@ const RecoveryInboxView = ({
           setSearchTerm={setSearchTerm}
           onMassAction={handleMassAction}
           automationSettings={automationSettings}
-          setAutomationSettings={updateAutomationSettings}
+          setRoute={setRoute}
         />
 
         <div className="divide-y divide-gray-100">
-          {filteredTickets.length > 0 ? (
-            filteredTickets.map((ticket) => (
-              <RecoveryTicketRow key={ticket.id} ticket={ticket} onOpen={setRoute} />
+          {filteredCases.length > 0 ? (
+            filteredCases.map((recoveryCase) => (
+              <RecoveryTicketRow key={recoveryCase.id} recoveryCase={recoveryCase} onOpen={setRoute} />
             ))
           ) : (
             <RecoveryEmptyState
-              title="No Results Found"
+              title="No Recovery Cases Found"
               message="Try clearing your filters or changing your search term."
             />
           )}
         </div>
 
         <div className="p-4 text-center text-sm text-gray-500 border-t">
-          Showing {filteredTickets.length} tickets.
+          Showing {filteredCases.length} cases.
         </div>
       </div>
 
@@ -157,60 +184,74 @@ const RecoveryInboxView = ({
 };
 
 const RecoveryConversationView = ({
-  ticketId,
+  recoveryCaseId,
   setRoute,
-  updateTicket,
+  updateCase,
   automationSettings,
 }: {
-  ticketId: string;
-  setRoute: (id: string | null) => void;
-  updateTicket: (ticket: any) => void;
-  automationSettings: { autoRecovery: boolean; autoReferral: boolean };
+  recoveryCaseId: string;
+  setRoute: (route: string | null) => void;
+  updateCase: (fields: any) => void;
+  automationSettings: typeof initialAutomationSettings;
 }) => {
-  const initialTicket = MOCK_RECOVERY_TICKETS.find(t => t.id === ticketId);
-  const [ticket, setTicket] = useState(initialTicket);
+  const initialCase = MOCK_RECOVERY_CASES.find(t => t.id === recoveryCaseId);
+  const [recoveryCase, setRecoveryCase] = useState(initialCase);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
-  const [draftMessage, setDraftMessage] = useState(ticket?.aiDraft || '');
-  const [timeline, setTimeline] = useState(ticket?.timeline || []);
+  const [draftMessage, setDraftMessage] = useState(recoveryCase?.aiDraft || '');
+  const [timeline, setTimeline] = useState(recoveryCase?.timeline || []);
   const [showConfirmation, setShowConfirmation] = useState<string | boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const currentCase = recoveryCase || initialCase;
 
   // Simulate AI Auto-send if autoRecovery is enabled
   useEffect(() => {
-    if (automationSettings.autoRecovery && ticket && ticket.rating <= 3 && ticket.status === 'New' && ticket.hasDraft) {
-      console.log(`AI Auto-Recovery triggered for ticket ${ticket.id}. Simulating immediate send.`);
+    if (!currentCase || currentCase.status !== 'New') return;
+
+    if (automationSettings.enabled.autoRecovery && currentCase.rating <= 4 && currentCase.hasDraft) {
+      console.log(`AI Auto-Recovery triggered for case ${currentCase.id}. Simulating immediate send.`);
+      
       setIsLoading(true);
+      
+      const autoMessage = automationSettings.messages.autoRecovery
+        .replace('[Customer Name]', currentCase.customer || 'Customer')
+        .replace('[Manager Name]', 'Mr. Smith');
+      
       setTimeout(() => {
         const sentMessage = {
           type: 'sent',
-          content: ticket.aiDraft,
+          content: autoMessage,
           sender: 'AI Automation',
           time: new Date().toLocaleTimeString(),
-          channel: ticket.channel
+          channel: currentCase.channel
         };
         const newTimeline = [...timeline, sentMessage];
-        const updatedTicket = { ...ticket, status: 'Responding', hasDraft: false, timeline: newTimeline };
+        const updatedCase = { ...currentCase, status: 'Responding', hasDraft: false, timeline: newTimeline };
         
         setTimeline(newTimeline);
-        setTicket(updatedTicket);
-        updateTicket(updatedTicket);
+        setRecoveryCase(updatedCase);
+        updateCase(updatedCase);
         setDraftMessage('');
         setIsLoading(false);
-        setShowConfirmation(`AI Auto-Recovery sent: "${ticket.aiDraft.substring(0, 30)}..."`);
+        setShowConfirmation(`AI Auto-Recovery sent: "${sentMessage.content.substring(0, 30)}..."`);
         setTimeout(() => setShowConfirmation(false), 3000);
       }, 1500);
     }
-  }, [automationSettings.autoRecovery, ticket?.status, ticket?.rating]);
+  }, [automationSettings.enabled.autoRecovery, currentCase?.status, currentCase?.rating]);
 
-  if (!ticket) {
+  if (!currentCase) {
     return (
       <div className="p-8 text-center text-xl text-red-500">
-        Ticket not found. <button onClick={() => setRoute(null)} className="text-blue-600 underline">Go back to Inbox</button>
+        Recovery Case not found. <button onClick={() => setRoute(null)} className="text-blue-600 underline">Go back to Inbox</button>
       </div>
     );
   }
 
   const handleApproveSend = () => {
+    if (!draftMessage) return;
+
     setIsLoading(true);
     setTimeout(() => {
       const sentMessage = {
@@ -218,17 +259,17 @@ const RecoveryConversationView = ({
         content: draftMessage,
         sender: 'You/AI',
         time: new Date().toLocaleTimeString(),
-        channel: ticket.channel
+        channel: currentCase.channel
       };
       const newTimeline = [...timeline, sentMessage];
-      const updatedTicket = { ...ticket, status: 'Responding', hasDraft: false, timeline: newTimeline };
+      const updatedCase = { ...currentCase, status: 'Responding', hasDraft: false, timeline: newTimeline };
       
       setTimeline(newTimeline);
-      setTicket(updatedTicket);
-      updateTicket(updatedTicket);
+      setRecoveryCase(updatedCase);
+      updateCase(updatedCase);
       setDraftMessage('');
       setIsLoading(false);
-      setShowConfirmation(true);
+      setShowConfirmation('Message approved and sent!');
       setTimeout(() => setShowConfirmation(false), 3000);
     }, 800);
   };
@@ -236,33 +277,80 @@ const RecoveryConversationView = ({
   const handleRegenerate = () => {
     setIsLoading(true);
     setTimeout(() => {
-      const newDraft = "We appreciate you sharing your experience. We are determined to earn your trust back, not just with a discount, but by showing you the quality we usually offer. Would a quick personal call from our shift leader help us understand this better?";
+      const newDraft = `[Manager Name] here. I saw your feedback and wanted to personally reach out. We're determined to earn your trust back, not just with a discount, but by showing you the quality we usually offer. Would a quick personal call from me help us understand this better?`;
       setDraftMessage(newDraft);
       setIsLoading(false);
     }, 1500);
   };
 
   const handleMarkResolved = () => {
-    const updatedTicket = { ...ticket, status: 'Resolved' };
-    setTicket(updatedTicket);
-    updateTicket(updatedTicket);
-  };
-
-  const handleSendSatisfactionCheck = () => {
-    const updatedTicket = { ...ticket, csat: 'Awaiting' };
-    setTicket(updatedTicket);
-    updateTicket(updatedTicket);
-    setShowConfirmation(true);
+    const updatedCase = { ...currentCase, status: 'Resolved' };
+    setRecoveryCase(updatedCase);
+    updateCase(updatedCase);
+    
+    // Post-Resolution Automation Check
+    if (updatedCase.rating >= 1 && updatedCase.rating <= 4 && automationSettings.enabled.autoWinBack) {
+      const schedule = automationSettings.schedule.winBack;
+      console.log(`Auto-Win Back scheduled for 1-4 star case ${updatedCase.id} in ${schedule}.`);
+      setShowConfirmation(`Case resolved. Auto-Win Back scheduled for ${schedule}.`);
+    } else if (updatedCase.rating === 5 && automationSettings.enabled.autoReferral) {
+      const schedule = automationSettings.schedule.referral;
+      console.log(`Auto-Referral scheduled for 5 star case ${updatedCase.id} in ${schedule}.`);
+      setShowConfirmation(`Case resolved. Auto-Referral scheduled for ${schedule}.`);
+    } else {
+      setShowConfirmation('Case marked resolved.');
+    }
     setTimeout(() => setShowConfirmation(false), 3000);
   };
 
-  const handleTicketUpdate = (updatedFields: any) => {
-    const updatedTicket = { ...ticket, ...updatedFields };
-    setTicket(updatedTicket);
-    updateTicket(updatedTicket);
+  const handleSendSatisfactionCheck = () => {
+    const updatedCase = { ...currentCase, csat: 'Awaiting' };
+    setRecoveryCase(updatedCase);
+    updateCase(updatedCase);
+    setShowConfirmation('Satisfaction check sent.');
+    setTimeout(() => setShowConfirmation(false), 3000);
   };
 
-  const severityColor = ticket.rating <= 2 ? 'bg-red-500' : ticket.rating <= 4 ? 'bg-orange-500' : 'bg-green-500';
+  const handleCaseUpdate = (updatedFields: any) => {
+    const updatedCase = { ...currentCase, ...updatedFields };
+    setRecoveryCase(updatedCase);
+    updateCase(updatedCase);
+  };
+
+  const severityColor = currentCase.rating <= 4 ? 'bg-red-500' : 'bg-green-500';
+
+  const complaintLogContent = (
+    <>
+      <p className='font-bold'>Case Log for {MOCK_RECOVERY_CUSTOMER_DATA.name}</p>
+      <ul className='list-disc pl-5'>
+        <li>**Case RCV001 (1 Star):** Delivery delay, full refund issued. Status: Resolved (1 hour ago).</li>
+        <li>**Case RCV002 (2 Star):** Service complaint, manager call arranged. Status: Satisfied (Yesterday).</li>
+        <li>**Case RCV003 (3 Star):** Noise level feedback, acoustic solution noted. Status: Resolved (Oct 20, 2025).</li>
+      </ul>
+      <p className='mt-3'>*This data is critical for understanding lifetime customer value (LTV) and churn risk.*</p>
+    </>
+  );
+
+  const purchaseHistoryContent = (
+    <>
+      <p className='font-bold'>Recent Purchases for {MOCK_RECOVERY_CUSTOMER_DATA.name}</p>
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Value</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          <tr><td className="px-6 py-4 whitespace-nowrap">Dec 10, 2025</td><td className="px-6 py-4 whitespace-nowrap">$45.00</td><td className="px-6 py-4 whitespace-nowrap">Main Dish, Drink</td></tr>
+          <tr><td className="px-6 py-4 whitespace-nowrap">Nov 28, 2025</td><td className="px-6 py-4 whitespace-nowrap">$62.50</td><td className="px-6 py-4 whitespace-nowrap">Two Entrees, Dessert</td></tr>
+          <tr><td className="px-6 py-4 whitespace-nowrap">Oct 15, 2025</td><td className="px-6 py-4 whitespace-nowrap">$28.99</td><td className="px-6 py-4 whitespace-nowrap">Lunch Combo</td></tr>
+        </tbody>
+      </table>
+      <p className='mt-3'>*Customer is a repeat visitor (8 visits total). They spend an average of $45 per visit.*</p>
+    </>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -272,32 +360,21 @@ const RecoveryConversationView = ({
             <button onClick={() => setRoute(null)} className="text-gray-500 hover:text-gray-800 transition" aria-label="Back to Inbox">
               <ArrowLeft className="h-6 w-6" />
             </button>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Ticket #{ticketId} - {ticket.customer}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Case #{recoveryCaseId} - {currentCase.customer}</h1>
           </div>
           <div className="flex items-center space-x-2 mt-2 sm:mt-0">
             <span className={`px-3 py-1 text-sm font-semibold rounded-full text-white ${severityColor} uppercase`}>
-              {ticket.rating} Star | {ticket.rating <= 3 ? 'Recovery Focus' : 'Feedback Loop'}
+              {currentCase.rating} Star | {currentCase.rating <= 4 ? 'Recovery Focus (1-4★)' : 'Referral Focus (5★)'}
             </span>
-            {ticket.status !== 'Resolved' ? (
-              <button
-                onClick={handleMarkResolved}
-                className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center"
-                aria-label="Mark ticket as resolved"
-              >
-                <CheckCircle className="mr-1 h-4 w-4" /> Resolve
-              </button>
-            ) : (
-              <span className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg">Resolved</span>
-            )}
           </div>
         </div>
-        <p className="text-sm text-gray-500 mt-1">Problem: {ticket.excerpt} | Received: {ticket.time}</p>
+        <p className="text-sm text-gray-500 mt-1">Problem: {currentCase.excerpt} | Received: {currentCase.time}</p>
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div className="lg:w-2/3 space-y-6 overflow-y-auto pr-0 lg:pr-6 mb-6 lg:mb-0">
           <RecoveryActionPanel
-            ticket={ticket}
+            recoveryCase={currentCase}
             onSendSatisfactionCheck={handleSendSatisfactionCheck}
             onSendFollowUp={() => setIsFollowUpModalOpen(true)}
             onMarkResolved={handleMarkResolved}
@@ -313,13 +390,17 @@ const RecoveryConversationView = ({
         </div>
 
         <div className="lg:w-1/3 space-y-6">
-          <RecoveryCustomerPanel customer={MOCK_RECOVERY_CUSTOMER_DATA} />
+          <RecoveryCustomerPanel
+            customer={MOCK_RECOVERY_CUSTOMER_DATA}
+            onOpenLog={() => setIsLogModalOpen(true)}
+            onOpenHistory={() => setIsHistoryModalOpen(true)}
+          />
           <RecoveryAiComposer
             draftMessage={draftMessage}
             setDraftMessage={setDraftMessage}
             onApproveSend={handleApproveSend}
             onRegenerate={handleRegenerate}
-            channel={ticket.channel}
+            channel={currentCase.channel}
             isLoading={isLoading}
             isDraftEmpty={!draftMessage}
           />
@@ -340,8 +421,22 @@ const RecoveryConversationView = ({
       <RecoveryFollowUpModal
         isOpen={isFollowUpModalOpen}
         onClose={() => setIsFollowUpModalOpen(false)}
-        ticketId={ticketId}
-        updateTicket={handleTicketUpdate}
+        ticketId={recoveryCaseId}
+        updateTicket={handleCaseUpdate}
+      />
+
+      <RecoveryModal
+        title="Customer Complaint Log (Missing Page Placeholder)"
+        content={complaintLogContent}
+        isOpen={isLogModalOpen}
+        onClose={() => setIsLogModalOpen(false)}
+      />
+
+      <RecoveryModal
+        title="Full Purchase History (Missing Page Placeholder)"
+        content={purchaseHistoryContent}
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
       />
     </div>
   );

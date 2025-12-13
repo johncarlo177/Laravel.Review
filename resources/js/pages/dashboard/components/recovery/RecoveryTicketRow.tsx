@@ -2,21 +2,21 @@ import React from 'react';
 import { Phone, Mail, Smartphone, User, Send, MessageSquare } from 'lucide-react';
 
 interface RecoveryTicketRowProps {
-  ticket: any;
+  recoveryCase: any;
   onOpen: (id: string) => void;
 }
 
-export const RecoveryTicketRow: React.FC<RecoveryTicketRowProps> = ({ ticket, onOpen }) => {
+export const RecoveryTicketRow: React.FC<RecoveryTicketRowProps> = ({ recoveryCase, onOpen }) => {
   const getRatingColor = (rating: number) => {
     if (rating === 1) return 'bg-red-100 text-red-700';
     if (rating === 2) return 'bg-yellow-100 text-yellow-700';
     if (rating === 3) return 'bg-orange-100 text-orange-700';
-    if (rating === 4) return 'bg-blue-100 text-blue-700'; // Blue for 4-star
-    if (rating === 5) return 'bg-green-100 text-green-700'; // Green for 5-star
+    if (rating === 4) return 'bg-blue-100 text-blue-700';
+    if (rating === 5) return 'bg-green-100 text-green-700';
     return 'bg-gray-100 text-gray-700';
   };
 
-  const ratingColor = getRatingColor(ticket.rating);
+  const ratingColor = getRatingColor(recoveryCase.rating);
 
   const statusPill = (status: string) => {
     let classes = 'px-3 py-1 text-xs font-semibold rounded-full';
@@ -29,41 +29,40 @@ export const RecoveryTicketRow: React.FC<RecoveryTicketRowProps> = ({ ticket, on
   };
 
   const channelIcon = (channel: string) => {
-    switch (channel.toLowerCase()) {
-      case 'sms': return <Phone className="h-5 w-5 text-blue-500" aria-label="SMS" />;
-      case 'email': return <Mail className="h-5 w-5 text-red-500" aria-label="Email" />;
-      case 'app': return <Smartphone className="h-5 w-5 text-green-500" aria-label="In-App" />;
-      default: return <User className="h-5 w-5 text-gray-500" aria-label="Unknown" />;
+    switch (channel?.toLowerCase()) {
+      case 'sms': return <Phone className="h-5 w-5 text-blue-500" title="SMS" />;
+      case 'email': return <Mail className="h-5 w-5 text-red-500" title="Email" />;
+      case 'app': return <Smartphone className="h-5 w-5 text-green-500" title="In-App" />;
+      default: return <User className="h-5 w-5 text-gray-500" title="Unknown" />;
     }
   };
 
-  const handleOpenClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onOpen(ticket.id);
+  const handleOpenClick = () => {
+    onOpen(recoveryCase.id);
   };
 
   return (
     <div className="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 sm:p-6 hover:bg-gray-50 transition border-b border-gray-100 last:border-b-0">
       <button onClick={handleOpenClick} className="flex-grow min-w-0 md:w-auto mb-2 sm:mb-0 text-left p-0 border-none bg-transparent">
         <div className="flex items-center space-x-3 cursor-pointer">
-          <span className={`${ratingColor} px-2 py-0.5 text-xs font-bold rounded-md flex-shrink-0`} aria-label={`${ticket.rating} star rating`}>
-            {ticket.rating}★
+          <span className={`${ratingColor} px-2 py-0.5 text-xs font-bold rounded-md flex-shrink-0`} aria-label={`${recoveryCase.rating} star rating`}>
+            {recoveryCase.rating}★
           </span>
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{ticket.customer || 'Anonymous Customer'}</p>
-            <p className="text-sm text-gray-500 truncate">{ticket.excerpt}</p>
+            <p className="font-semibold text-gray-900 truncate">{recoveryCase.customer || 'Anonymous Customer'}</p>
+            <p className="text-sm text-gray-500 truncate">{recoveryCase.excerpt}</p>
           </div>
         </div>
       </button>
 
       <div className="flex items-center space-x-4 flex-shrink-0 ml-auto mr-4">
-        <span className="text-sm text-gray-500">{ticket.time}</span>
-        <span className="text-lg">{channelIcon(ticket.channel)}</span>
-        {statusPill(ticket.status)}
+        <span className="text-sm text-gray-500">{recoveryCase.time}</span>
+        <span className="text-lg">{channelIcon(recoveryCase.channel)}</span>
+        {statusPill(recoveryCase.status)}
       </div>
 
       <div className="flex space-x-2 flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-        {ticket.hasDraft && ticket.status !== 'Resolved' && (
+        {recoveryCase.hasDraft && recoveryCase.status !== 'Resolved' && (
           <button onClick={handleOpenClick} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center" aria-label="Approve and send draft">
             <Send className="mr-1 h-4 w-4" /> Approve & Send
           </button>

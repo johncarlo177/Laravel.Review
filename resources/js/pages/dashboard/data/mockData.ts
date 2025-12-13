@@ -16,11 +16,11 @@ export const MOCK_FEEDBACK = [
 ];
 
 export const MOCK_RECOVERY_STATS = {
-  totalNegative: 45,
+  totalNegative: 65, // Updated for 1-4 stars
   recoveryRate: 68.5,
   avgResponseTime: 1.2,
   resolvedCount: 31,
-  fiveStarCount: 150, // New stat for referral potential
+  fiveStarCount: 150, // Potential for referral
 };
 
 export const MOCK_RECOVERY_CUSTOMER_DATA = {
@@ -31,9 +31,9 @@ export const MOCK_RECOVERY_CUSTOMER_DATA = {
   pastComplaints: 2
 };
 
-export const MOCK_RECOVERY_TICKETS = [
+export const MOCK_RECOVERY_CASES = [
   {
-    id: 'tkt001',
+    id: 'rcv001',
     customer: 'Jane Doe',
     rating: 1,
     excerpt: 'The delivery was 45 minutes late and the food was cold.',
@@ -50,7 +50,7 @@ export const MOCK_RECOVERY_TICKETS = [
     internalNotes: ''
   },
   {
-    id: 'tkt002',
+    id: 'rcv002',
     customer: 'Marcus V.',
     rating: 2,
     excerpt: 'Waitress was unfriendly and seemed rushed when taking our order.',
@@ -67,7 +67,7 @@ export const MOCK_RECOVERY_TICKETS = [
     internalNotes: ''
   },
   {
-    id: 'tkt003',
+    id: 'rcv003',
     customer: 'Anonymous',
     rating: 3,
     excerpt: 'The noise level was too high, making conversation difficult.',
@@ -84,7 +84,7 @@ export const MOCK_RECOVERY_TICKETS = [
     internalNotes: ''
   },
   {
-    id: 'tkt004',
+    id: 'rcv004',
     customer: 'Sarah K.',
     rating: 4,
     excerpt: 'Great food, but the wait time was a bit long (30 mins).',
@@ -100,7 +100,7 @@ export const MOCK_RECOVERY_TICKETS = [
     internalNotes: ''
   },
   {
-    id: 'tkt005',
+    id: 'rcv005',
     customer: 'Tom W.',
     rating: 5,
     excerpt: "Best meal I've had all year. Server was amazing!",

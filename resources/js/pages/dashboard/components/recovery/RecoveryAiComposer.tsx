@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Send, RotateCcw } from 'lucide-react';
 
 interface RecoveryAiComposerProps {
   draftMessage: string;
@@ -42,13 +42,12 @@ export const RecoveryAiComposer: React.FC<RecoveryAiComposerProps> = ({
   isDraftEmpty,
 }) => {
   const [tone, setTone] = useState('Empathetic');
-  const [showAiPrompt, setShowAiPrompt] = useState(false);
   const charCount = draftMessage ? draftMessage.length : 0;
   const isSms = channel?.toLowerCase() === 'sms';
   const charLimit = isSms ? 160 : 5000;
 
   const quickInsert = (text: string) => {
-    setDraftMessage(prev => prev + ' ' + text);
+    setDraftMessage(prev => (prev || '') + ' ' + text);
   };
 
   return (
@@ -64,7 +63,7 @@ export const RecoveryAiComposer: React.FC<RecoveryAiComposerProps> = ({
         </div>
       ) : (
         <textarea
-          value={draftMessage}
+          value={draftMessage || ''}
           onChange={(e) => setDraftMessage(e.target.value)}
           rows={isSms ? 4 : 8}
           className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:ring-blue-500 focus:border-blue-500 transition"
@@ -78,14 +77,12 @@ export const RecoveryAiComposer: React.FC<RecoveryAiComposerProps> = ({
         <p className={`font-medium ${charCount > charLimit ? 'text-red-500' : 'text-gray-500'}`}>
           {charCount} / {charLimit} chars ({isSms ? 'SMS' : 'Email'} format)
         </p>
-        <button onClick={() => setShowAiPrompt(!showAiPrompt)} className="text-blue-600 hover:text-blue-800 font-medium flex items-center">
-          {showAiPrompt ? <EyeOff className="mr-1 h-4 w-4" /> : <Eye className="mr-1 h-4 w-4" />} {showAiPrompt ? 'Hide' : 'Show'} AI Prompt
-        </button>
+        <span className="text-blue-600 font-medium">Draft generated using: {tone} Tone</span>
       </div>
 
       {/* Tone Presets */}
       <div className="mt-4">
-        <span className="text-xs font-semibold text-gray-700 block mb-1">Tone Presets:</span>
+        <span className="text-xs font-semibold text-gray-700 block mb-1">Tone Presets (Manual Override):</span>
         <div className="flex space-x-2">
           <ToneButton tone="Empathetic" currentTone={tone} setTone={setTone} />
           <ToneButton tone="Professional" currentTone={tone} setTone={setTone} />

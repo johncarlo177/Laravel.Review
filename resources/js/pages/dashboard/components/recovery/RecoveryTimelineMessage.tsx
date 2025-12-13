@@ -36,7 +36,10 @@ export const RecoveryTimelineMessage: React.FC<RecoveryTimelineMessageProps> = (
             <span className="font-bold text-gray-800 text-xs sm:text-sm">{senderName}</span>
             <span className="text-xs text-gray-400 ml-3">{message.time}</span>
           </div>
-          <p className={`text-gray-700 ${isAi ? 'italic' : ''} whitespace-pre-wrap`}>{message.content}</p>
+          <p 
+            className={`text-gray-700 ${isAi ? 'italic' : ''}`} 
+            dangerouslySetInnerHTML={{ __html: message.content?.replace(/\n/g, '<br/>') || message.content }}
+          ></p>
           {isAi && <p className="mt-2 text-xs text-yellow-700 font-medium">Draft created based on problem summary.</p>}
         </div>
       </div>

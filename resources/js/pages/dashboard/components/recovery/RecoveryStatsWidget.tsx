@@ -36,7 +36,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, unit, colorClass, ico
 
 export const RecoveryStatsWidget: React.FC<RecoveryStatsWidgetProps> = ({ stats }) => (
   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-    <StatCard title="Negative Feedback (1-3★)" value={stats.totalNegative} unit="Tickets" colorClass="border-red-500" icon={ThumbsDown} />
+    <StatCard title="Recovery Cases (1-4★)" value={stats.totalNegative} unit="Cases" colorClass="border-red-500" icon={ThumbsDown} />
     <StatCard title="Recovery Rate" value={stats.recoveryRate} unit="%" colorClass="border-green-500" icon={Handshake} />
     <StatCard title="Avg Response Time" value={stats.avgResponseTime} unit="hrs" colorClass="border-blue-500" icon={Clock} />
     <StatCard title="5-Star Referral Potential" value={stats.fiveStarCount} unit="Customers" colorClass="border-yellow-500" icon={Star} />

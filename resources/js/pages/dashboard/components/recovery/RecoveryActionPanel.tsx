@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { Star, Calendar, Smile, Frown } from 'lucide-react';
+import { Star, Calendar, Smile, Frown, CheckCircle } from 'lucide-react';
 
 interface RecoveryActionPanelProps {
-  ticket: any;
+  recoveryCase: any;
   onSendSatisfactionCheck: () => void;
   onSendFollowUp: () => void;
   onMarkResolved: () => void;
 }
 
 export const RecoveryActionPanel: React.FC<RecoveryActionPanelProps> = ({
-  ticket,
+  recoveryCase,
   onSendSatisfactionCheck,
   onSendFollowUp,
   onMarkResolved,
 }) => {
-  const [notes, setNotes] = useState(ticket.internalNotes || '');
+  const [notes, setNotes] = useState(recoveryCase.internalNotes || '');
 
   const csatIndicator = (csat: string | null) => {
     if (!csat || csat === 'Awaiting') return <span className="text-sm font-medium text-gray-500">Awaiting Check</span>;
@@ -30,17 +30,17 @@ export const RecoveryActionPanel: React.FC<RecoveryActionPanelProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Ticket Actions & Internal Data</h3>
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Case Actions & Internal Data</h3>
 
       {/* Satisfaction Check */}
       <div className="mb-4 pb-4 border-b">
         <p className="font-semibold text-gray-700 mb-2 flex justify-between items-center">
           Customer Satisfaction Check: 
-          {csatIndicator(ticket.csat)}
+          {csatIndicator(recoveryCase.csat)}
         </p>
         <button 
           onClick={onSendSatisfactionCheck} 
-          disabled={ticket.csat !== null}
+          disabled={recoveryCase.csat !== null}
           className="w-full py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center"
         >
           <Star className="mr-2 h-4 w-4" /> Send Satisfaction Check
@@ -67,6 +67,17 @@ export const RecoveryActionPanel: React.FC<RecoveryActionPanelProps> = ({
             className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:ring-blue-500 focus:border-blue-500 transition"
           />
         </div>
+
+        {/* Resolve Button */}
+        {recoveryCase.status !== 'Resolved' && (
+          <button 
+            onClick={onMarkResolved} 
+            className="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition mt-4 flex items-center justify-center"
+            aria-label="Mark recovery case as resolved"
+          >
+            <CheckCircle className="mr-2 h-5 w-5" /> Resolve Case
+          </button>
+        )}
       </div>
     </div>
   );

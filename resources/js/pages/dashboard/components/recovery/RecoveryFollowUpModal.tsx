@@ -17,7 +17,7 @@ export const RecoveryFollowUpModal: React.FC<RecoveryFollowUpModalProps> = ({ is
   const handleConfirm = () => {
     const mockUpdate = { id: ticketId, followUp: { template, schedule } };
     updateTicket(mockUpdate);
-    console.log(`Scheduling follow-up for ticket ${ticketId} with template ${template} at ${schedule}.`);
+    console.log(`Scheduling follow-up for case ${ticketId} with template ${template} at ${schedule}.`);
     onClose();
   };
 
@@ -52,7 +52,7 @@ export const RecoveryFollowUpModal: React.FC<RecoveryFollowUpModalProps> = ({ is
 
           {/* Schedule Selector */}
           <div>
-            <p className="font-semibold text-gray-700 mb-2">2. Schedule Send Time (Select Follow-Up Page):</p>
+            <p className="font-semibold text-gray-700 mb-2">2. Schedule Send Time:</p>
             <div className="flex space-x-2 text-sm">
               {['now', '24h', '48h', '7 days'].map((s) => (
                 <button

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
+import { SMSTemplateTuner } from './SMSTemplateTuner';
 
 interface AutomationSettingsViewProps {
   setRoute: (route: string | null) => void;
@@ -78,7 +79,18 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
   automationSettings,
   updateAutomationSettings,
 }) => {
+  // Initialize SMS templates with defaults if not provided
+  const defaultSmsTemplates = {
+    business_name: 'Velocity Node',
+    prior_message: "Hello, is there a high-priority action for me?",
+    initial_rating: "Hello {{customer_name}}, thank you for trusting us today. We'd appreciate a quick, human rating on your experience: {{rating_link}}. Reply STOP to opt out.",
+    ai_apology: "Hi {{customer_name}}, the AI flagged your feedback. I'm genuinely sorry about your experience. Could you share just a little more context so I can calibrate a solution?",
+  };
+
   const [localSettings, setLocalSettings] = useState(automationSettings);
+  const [smsTemplates, setSmsTemplates] = useState(
+    (automationSettings as any).smsTemplates || defaultSmsTemplates
+  );
 
   const handleToggle = (key: string) => {
     setLocalSettings(prev => ({
@@ -110,8 +122,16 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
     }));
   };
 
+  const handleSmsTemplatesChange = (templates: any) => {
+    setSmsTemplates(templates);
+  };
+
   const handleSave = () => {
-    updateAutomationSettings(localSettings);
+    const settingsToSave = {
+      ...localSettings,
+      smsTemplates: smsTemplates,
+    };
+    updateAutomationSettings(settingsToSave);
     setRoute(null);
   };
 
@@ -139,7 +159,7 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gray-50">
+    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gray-50 pb-24">
       <header className="flex items-center justify-between pb-6 border-b mb-6">
         <h1 className="text-3xl font-extrabold text-gray-900">AI Automation Settings</h1>
         <button 
@@ -221,6 +241,12 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
           />
         </div>
       </div>
+
+      {/* SMS Template Tuner */}
+      <SMSTemplateTuner
+        smsTemplates={smsTemplates}
+        onTemplatesChange={handleSmsTemplatesChange}
+      />
 
       {/* Save Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-2xl z-10">

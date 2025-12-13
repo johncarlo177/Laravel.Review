@@ -52,27 +52,31 @@ const calculateEngagementScore = (subject: string, body: string): number => {
 const EngagementScoreGauge: React.FC<{ score: number }> = ({ score }) => {
   const colorClass = score > 85 ? 'text-green-600' : score > 65 ? 'text-yellow-600' : 'text-red-600';
   const fillClass = score > 85 ? 'bg-green-500' : score > 65 ? 'bg-yellow-500' : 'bg-red-500';
+  const bgClass = score > 85 ? 'bg-green-50 border-green-200' : score > 65 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200';
 
   return (
-    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-md">
-      <div className="flex justify-between items-center mb-2">
-        <span className={`text-xl font-bold ${colorClass}`}>{score}%</span>
-        <span className="text-sm text-gray-500 flex items-center">
-          <Zap size={16} className="mr-1 text-purple-500" /> EMAIL ENGAGEMENT SCORE (EES)
-        </span>
+    <div className={`p-5 rounded-xl border-2 ${bgClass} shadow-sm`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <Zap size={20} className="text-purple-500" />
+          <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Email Engagement Score
+          </span>
+        </div>
+        <span className={`text-3xl font-extrabold ${colorClass}`}>{score}%</span>
       </div>
-      <div className="w-full h-3 rounded-full bg-gray-200 overflow-hidden">
+      <div className="w-full h-4 rounded-full bg-white/60 overflow-hidden mb-3 shadow-inner">
         <div
-          className={`h-full transition-all duration-1000 ${fillClass}`}
+          className={`h-full transition-all duration-1000 ${fillClass} shadow-sm`}
           style={{ width: `${score}%` }}
         ></div>
       </div>
-      <p className={`text-xs mt-2 ${colorClass}`}>
+      <p className={`text-sm font-medium ${colorClass} text-center`}>
         {score > 85
-          ? 'OPTIMAL: High Open & CTA potential.'
+          ? '✓ OPTIMAL: High Open & CTA potential'
           : score > 65
-          ? 'MODERATE: Check subject personalization and CTA density.'
-          : 'LOW: Needs critical revision for clarity/appeal.'}
+          ? '⚠ MODERATE: Check subject personalization and CTA density'
+          : '✗ LOW: Needs critical revision for clarity/appeal'}
       </p>
     </div>
   );
@@ -237,17 +241,19 @@ export const EmailTemplateTuner: React.FC<EmailTemplateTunerProps> = ({
         <span>Email Template Tuner</span>
       </h2>
 
-      <h3 className="text-lg font-semibold text-gray-700 flex items-center space-x-2 pl-2">
-        <Mail size={18} /> LIVE PREVIEW
-      </h3>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Column 1: Email Preview & Engagement Score */}
+        {/* Column 1: Engagement Score & Email Preview */}
         <div className="lg:col-span-1 space-y-6" aria-label="Live Email Preview and Metrics">
-          <LiveEmailPreview
-            template={currentTemplate}
-            senderName={localTemplates.sender_name}
-            senderEmail={localTemplates.sender_email}
-          />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 flex items-center space-x-2 mb-3">
+              <Mail size={18} /> LIVE PREVIEW
+            </h3>
+            <LiveEmailPreview
+              template={currentTemplate}
+              senderName={localTemplates.sender_name}
+              senderEmail={localTemplates.sender_email}
+            />
+          </div>
           <EngagementScoreGauge score={engagementScore} />
         </div>
 

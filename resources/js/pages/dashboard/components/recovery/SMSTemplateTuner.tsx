@@ -176,13 +176,12 @@ export const SMSTemplateTuner: React.FC<SMSTemplateTunerProps> = ({
         <Target size={24} className="text-indigo-600" aria-hidden="true" />
         <span>SMS Template Tuner</span>
       </h2>
-
+      <h3 className="text-lg font-semibold text-gray-700 flex items-center space-x-2 pl-2">
+        <Phone size={18} /> LIVE PREVIEW
+      </h3>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Column 1: SMS Preview & Tone Index */}
         <div className="lg:col-span-1 space-y-6" aria-label="Live SMS Preview and Metrics">
-          <h3 className="text-lg font-semibold text-gray-700 flex items-center space-x-2 pl-2">
-            <Phone size={18} /> LIVE PREVIEW
-          </h3>
           <LiveSMSPreview
             content={currentTemplateContent}
             senderName={localTemplates.business_name}

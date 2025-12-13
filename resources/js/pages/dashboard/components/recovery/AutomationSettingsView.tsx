@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { SMSTemplateTuner } from './SMSTemplateTuner';
+import { EmailTemplateTuner } from './EmailTemplateTuner';
 
 interface AutomationSettingsViewProps {
   setRoute: (route: string | null) => void;
@@ -87,9 +88,26 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
     ai_apology: "Hi {{customer_name}}, the AI flagged your feedback. I'm genuinely sorry about your experience. Could you share just a little more context so I can calibrate a solution?",
   };
 
+  // Initialize Email templates with defaults if not provided
+  const defaultEmailTemplates = {
+    sender_name: 'Neviane AI Resolution',
+    sender_email: 'resolution@neviane-ai.com',
+    initial_rating_request: {
+      subject: "Your Feedback Matters: Help us tune Neviane AI.",
+      body: "Hi {{customer_name}},\n\nThanks for your trust in {{client_company}}. We are focused on making every interaction exceptional, but we can't improve without hearing directly from you.\n\nCould you spare 10 seconds to share a simple rating on how we did during your last service interaction with {{client_company}}? It's private, quick, and helps our system learn.\n\n[[CTA: Share a quick thought]]\n\nThanks,\n{{sender_name}}",
+    },
+    solution_delivery: {
+      subject: "Solution Delivered: Your Credit Confirmation from Neviane AI",
+      body: "Dear {{customer_name}},\n\nBased on the data collected by the Resolution Console for {{client_company}}, we have processed an immediate credit of 75 units to your account. This is the first step in our resolution path. \n\nClick here for more details: [[CTA: View Account Details]]\n\nWe appreciate your patience.\n\nSincerely,\nResolution Core",
+    },
+  };
+
   const [localSettings, setLocalSettings] = useState(automationSettings);
   const [smsTemplates, setSmsTemplates] = useState(
     (automationSettings as any).smsTemplates || defaultSmsTemplates
+  );
+  const [emailTemplates, setEmailTemplates] = useState(
+    (automationSettings as any).emailTemplates || defaultEmailTemplates
   );
 
   const handleToggle = (key: string) => {
@@ -126,10 +144,15 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
     setSmsTemplates(templates);
   };
 
+  const handleEmailTemplatesChange = (templates: any) => {
+    setEmailTemplates(templates);
+  };
+
   const handleSave = () => {
     const settingsToSave = {
       ...localSettings,
       smsTemplates: smsTemplates,
+      emailTemplates: emailTemplates,
     };
     updateAutomationSettings(settingsToSave);
     setRoute(null);
@@ -246,6 +269,12 @@ export const AutomationSettingsView: React.FC<AutomationSettingsViewProps> = ({
       <SMSTemplateTuner
         smsTemplates={smsTemplates}
         onTemplatesChange={handleSmsTemplatesChange}
+      />
+
+      {/* Email Template Tuner */}
+      <EmailTemplateTuner
+        emailTemplates={emailTemplates}
+        onTemplatesChange={handleEmailTemplatesChange}
       />
 
       {/* Save Button */}

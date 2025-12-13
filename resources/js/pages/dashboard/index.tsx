@@ -8,6 +8,7 @@ import { Sidebar } from './components/shared/Sidebar';
 // Page Components
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { FeedbackInbox } from './components/feedback/FeedbackInbox';
+import { AddCustomer } from './components/customers/AddCustomer';
 import { AIRecoveryCenter } from './components/recovery/AIRecoveryCenter';
 import { WinBackEngine } from './components/winback/WinBackEngine';
 import { ReviewManager } from './components/reviews/ReviewManager';
@@ -47,6 +48,14 @@ export default function DashboardPage() {
         return <DashboardOverview setView={setView} stats={MOCK_DASHBOARD_STATS} />;
       case 'inbox':
         return <FeedbackInbox feedback={MOCK_FEEDBACK} />;
+      case 'addcustomer':
+        if (['owner', 'manager', 'admin'].includes(userRole))
+          return <AddCustomer />;
+        return (
+          <div className="p-10 text-center text-red-500">
+            Access Denied: You need Manager or Owner privileges for Add Customer.
+          </div>
+        );
       case 'recovery':
         if (['owner', 'manager', 'admin'].includes(userRole)) return <AIRecoveryCenter />;
         return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the AI Recovery Center.</div>;

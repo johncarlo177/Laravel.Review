@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Search } from 'lucide-react';
-
+import { Star, Search, UserPlus } from 'lucide-react';
 interface FeedbackItem {
   id: number;
   name: string;
@@ -81,9 +80,17 @@ export const FeedbackInbox: React.FC<FeedbackInboxProps> = ({ feedback }) => {
     'Resolved': 'bg-gray-100 text-gray-800',
   };
 
+  const handleAddCustomer = (customer: any) => {
+    // Handle customer addition - you can add API call here or update state
+    console.log('Customer added:', customer);
+    // Example: You might want to trigger a feedback request for this customer
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900">Feedback Inbox</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900">Feedback Inbox</h2>
+      </div>
 
       {/* Search Bar and Filters */}
       <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">

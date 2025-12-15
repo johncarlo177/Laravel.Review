@@ -81,7 +81,8 @@ const Navbar = () => {
             {/* NEW LINK for Recovery Calculator */}
             <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
             <a href="/price" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
-            <a href="/Ecards" className="text-slate-600 hover:text-blue-600 font-medium transition">Ecards</a>
+            <a href="/ecards" className="text-slate-600 hover:text-blue-600 font-medium transition">Ecards</a>
+            <a href="/terms" className="text-slate-600 hover:text-blue-600 font-medium transition">Terms</a>
             {isAuthenticated ? (
               <>
                 <button 
@@ -138,6 +139,7 @@ const Navbar = () => {
               <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
               <a href="/price" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
               <a href="/Ecards" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Ecards</a>
+              <a href="/terms" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Terms</a>
               {isAuthenticated ? (
                 <>
                   <button 

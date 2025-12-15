@@ -471,6 +471,11 @@ Route::get('/Ecards', function () {
 })->name('ecards');
 Route::get('/ecards', fn () => redirect('/Ecards'));
 
+// Terms page route
+Route::get('/terms', function () {
+    return Inertia::render('terms/index');
+})->name('terms');
+
 // Win-Back Calculator page route
 Route::get('/winback-calulator', function () {
     return Inertia::render('winback-calulator/index');

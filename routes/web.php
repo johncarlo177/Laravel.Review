@@ -447,11 +447,23 @@ Route::get('/account/sign-up', function () {
     return Inertia::render('account/register');
 })->middleware('guest:sanctum')->name('account.register');
 
+// Email verification page route
+Route::get('/account/verify-email', function () {
+    return Inertia::render('account/verify-email');
+})->name('verify-email');
+
 // Subscription page route
 Route::get('/subscription', function () {
     if (!auth('sanctum')->check()) {
         return redirect('/account/login');
     }
+    $user = auth('sanctum')->user();
+    
+    // Check if email is verified
+    if (!$user->email_verified_at) {
+        return redirect('/account/verify-email?email=' . urlencode($user->email));
+    }
+    
     return Inertia::render('subscription/index');
 })->name('subscription');
 
@@ -461,6 +473,12 @@ Route::get('/dashboard', function () {
         return redirect('/account/login');
     }
     $user = auth('sanctum')->user();
+    
+    // Check if email is verified
+    if (!$user->email_verified_at) {
+        return redirect('/account/verify-email?email=' . urlencode($user->email));
+    }
+    
     $currentPlan = $user->subscriptions?->first()?->subscription_plan?->name ?? 'Free';
     $userRole = $user->roles?->first()?->name ?? 'Owner';
     

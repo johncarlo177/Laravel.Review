@@ -1,4 +1,4 @@
-@php
+image.png@php
     $layoutBodyAttributes = ContentManager::bodyClass();
 
     if (isset($bodyAttributes)) {

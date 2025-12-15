@@ -84,16 +84,30 @@ export default function RegisterPage() {
         if (data.user) {
           localStorage.setItem('auth:user', JSON.stringify(data.user));
           
-          // Redirect to subscription if owner, otherwise dashboard
-          const userRole = data.user?.roles?.[0]?.name?.toLowerCase() || 'owner';
-          if (userRole === 'owner') {
-            window.location.href = '/subscription';
+          // Check if email is verified
+          if (data.user.email_verified_at) {
+            // Email already verified, redirect to subscription/dashboard
+            const userRole = data.user?.roles?.[0]?.name?.toLowerCase() || 'owner';
+            if (userRole === 'owner') {
+              window.location.href = '/subscription';
+              return;
+            }
+            window.location.href = '/dashboard';
+            return;
+          } else {
+            // Email not verified, redirect to verification page
+            window.location.href = `/account/verify-email?email=${encodeURIComponent(email)}`;
             return;
           }
         }
       }
 
-      window.location.href = '/dashboard';
+      // Fallback: redirect to verification if we have email
+      if (email) {
+        window.location.href = `/account/verify-email?email=${encodeURIComponent(email)}`;
+      } else {
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
       setErrors({ email: ['An error occurred. Please try again.'] });
       setLoading(false);

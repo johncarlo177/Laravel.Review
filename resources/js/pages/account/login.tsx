@@ -63,6 +63,12 @@ export default function LoginPage() {
         if (data.user) {
           localStorage.setItem('auth:user', JSON.stringify(data.user));
           
+          // Check if email is verified first
+          if (!data.user.email_verified_at) {
+            window.location.href = `/account/verify-email?email=${encodeURIComponent(data.user.email)}`;
+            return;
+          }
+          
           // Check if user should go to subscription page
           const currentPlan = data.user?.subscriptions?.[0]?.subscription_plan?.name || 'Free';
           const userRole = data.user?.roles?.[0]?.name?.toLowerCase() || 'owner';

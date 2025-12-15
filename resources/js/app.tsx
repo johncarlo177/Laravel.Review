@@ -20,6 +20,7 @@ import WinBackPage from './pages/winback/index';
 import AIRecoveryPage from './pages/airecovery/index';
 import NotFoundPage from './pages/errors/404';
 import SubscriptionPage from './pages/subscription/index';
+import VerifyEmailPage from './pages/account/verify-email';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -27,6 +28,7 @@ const pages = {
     'dashboard/index': DashboardPage,
     'account/login': LoginPage,
     'account/register': RegisterPage,
+    'account/verify-email': VerifyEmailPage,
     'getlivedemo/index': GetLiveDemoPage,
     'ecards/index': EcardsPage,
     'price/index': PricePage,

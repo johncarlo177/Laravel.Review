@@ -8,6 +8,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [role, setRole] = useState('owner');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('US');
+  const [companyName, setCompanyName] = useState('');
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const { auth } = usePage().props as any;
@@ -47,7 +50,18 @@ export default function RegisterPage() {
           'Accept': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirmation, role }),
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password, 
+          password_confirmation: passwordConfirmation, 
+          role,
+          mobile_number: phoneNumber ? {
+            iso_code: phoneCountryCode,
+            mobile_number: phoneNumber
+          } : undefined,
+          company_name: companyName || undefined
+        }),
       });
 
       const data = await response.json();
@@ -90,10 +104,12 @@ export default function RegisterPage() {
     return null; // Will redirect
   }
 
-  const errorMessage = errors.name?.[0] || errors.email?.[0] || errors.password?.[0] || 
+  const errorMessage = errors.name?.[0] || errors.email?.[0] || errors.password?.[0] || errors.mobile_number?.[0] || errors.company_name?.[0] ||
     (typeof errors.name === 'string' ? errors.name : null) ||
     (typeof errors.email === 'string' ? errors.email : null) ||
-    (typeof errors.password === 'string' ? errors.password : null);
+    (typeof errors.password === 'string' ? errors.password : null) ||
+    (typeof errors.mobile_number === 'string' ? errors.mobile_number : null) ||
+    (typeof errors.company_name === 'string' ? errors.company_name : null);
 
   const BrandHeader = () => (
     <div className="flex flex-col items-center mb-6">
@@ -148,6 +164,70 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"
             placeholder="Email Address"
+          />
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number <span className="text-red-500">*</span></label>
+            <div className="flex gap-2">
+              <select
+                id="phoneCountryCode"
+                value={phoneCountryCode}
+                onChange={(e) => setPhoneCountryCode(e.target.value)}
+                required
+                className="w-24 px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-sm"
+              >
+                <option value="US">US +1</option>
+                <option value="CA">CA +1</option>
+                <option value="GB">GB +44</option>
+                <option value="AU">AU +61</option>
+                <option value="DE">DE +49</option>
+                <option value="FR">FR +33</option>
+                <option value="IT">IT +39</option>
+                <option value="ES">ES +34</option>
+                <option value="NL">NL +31</option>
+                <option value="BE">BE +32</option>
+                <option value="CH">CH +41</option>
+                <option value="AT">AT +43</option>
+                <option value="SE">SE +46</option>
+                <option value="NO">NO +47</option>
+                <option value="DK">DK +45</option>
+                <option value="FI">FI +358</option>
+                <option value="PL">PL +48</option>
+                <option value="IE">IE +353</option>
+                <option value="PT">PT +351</option>
+                <option value="GR">GR +30</option>
+                <option value="LU">LU +352</option>
+                <option value="CZ">CZ +420</option>
+                <option value="HU">HU +36</option>
+                <option value="RO">RO +40</option>
+                <option value="BG">BG +359</option>
+                <option value="HR">HR +385</option>
+                <option value="SK">SK +421</option>
+                <option value="SI">SI +386</option>
+                <option value="EE">EE +372</option>
+                <option value="LV">LV +371</option>
+                <option value="LT">LT +370</option>
+                <option value="MT">MT +356</option>
+                <option value="CY">CY +357</option>
+              </select>
+              <input
+                type="tel"
+                id="phone"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                placeholder="Phone Number"
+              />
+            </div>
+          </div>
+
+          <input
+            type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+            placeholder="Company Name (Optional)"
           />
 
           <input

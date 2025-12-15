@@ -75,9 +75,9 @@ const Navbar = () => {
           </div>
           
           <div className="hidden md:flex space-x-8 items-center">
-            <a href="#features" className="text-slate-600 hover:text-blue-600 font-medium transition">Features</a>
-            <a href="#winback" className="text-slate-600 hover:text-blue-600 font-medium transition">Win-Back Engine</a>
-            <a href="#loss-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Loss Calculator</a>
+            <a href="/airecovery" className="text-slate-600 hover:text-blue-600 font-medium transition">AI Review Recovery</a>
+            <a href="/winback" className="text-slate-600 hover:text-blue-600 font-medium transition">Win-Back Engine</a>
+            {/* <a href="#loss-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Loss Calculator</a> */}
             {/* NEW LINK for Recovery Calculator */}
             <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
             <a href="/price" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
@@ -132,9 +132,9 @@ const Navbar = () => {
             className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-2">
-              <a href="#features" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Features</a>
-              <a href="#winback" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Win-Back Engine</a>
-              <a href="#loss-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Loss Calculator</a>
+              <a href="/airecovery" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">AI Review Recovery</a>
+              <a href="/winback" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Win-Back Engine</a>
+              {/* <a href="#loss-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Loss Calculator</a> */}
               {/* NEW MOBILE LINK for Recovery Calculator */}
               <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
               <a href="/price" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>

@@ -16,6 +16,7 @@ import EcardsPage from './pages/ecards/index';
 import PricePage from './pages/price/index.tsx';
 import WinBackCalculatorPage from './pages/winback-calulator/index';
 import TermsPage from './pages/terms/index';
+import WinBackPage from './pages/winback/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -28,6 +29,7 @@ const pages = {
     'price/index': PricePage,
     'winback-calulator/index': WinBackCalculatorPage,
     'terms/index': TermsPage,
+    'winback/index': WinBackPage,
 };
 
 createInertiaApp({

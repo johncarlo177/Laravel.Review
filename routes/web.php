@@ -465,6 +465,11 @@ Route::get('/price', function () {
     return Inertia::render('price/index');
 })->name('price');
 
+// Win-Back Engine marketing page
+Route::get('/winback', function () {
+    return Inertia::render('winback/index');
+})->name('winback');
+
 // Ecards landing page
 Route::get('/Ecards', function () {
     return Inertia::render('ecards/index');

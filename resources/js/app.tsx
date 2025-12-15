@@ -19,6 +19,7 @@ import TermsPage from './pages/terms/index';
 import WinBackPage from './pages/winback/index';
 import AIRecoveryPage from './pages/airecovery/index';
 import NotFoundPage from './pages/errors/404';
+import SubscriptionPage from './pages/subscription/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -34,6 +35,7 @@ const pages = {
     'winback/index': WinBackPage,
     'airecovery/index': AIRecoveryPage,
     'errors/404': NotFoundPage,
+    'subscription/index': SubscriptionPage,
 };
 
 createInertiaApp({

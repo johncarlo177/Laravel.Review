@@ -447,10 +447,26 @@ Route::get('/account/sign-up', function () {
     return Inertia::render('account/register');
 })->middleware('guest:sanctum')->name('account.register');
 
+// Subscription page route
+Route::get('/subscription', function () {
+    if (!auth('sanctum')->check()) {
+        return redirect('/account/login');
+    }
+    return Inertia::render('subscription/index');
+})->name('subscription');
+
 // Dashboard route using Inertia React component
 Route::get('/dashboard', function () {
     if (!auth('sanctum')->check()) {
         return redirect('/account/login');
+    }
+    $user = auth('sanctum')->user();
+    $currentPlan = $user->subscriptions?->first()?->subscription_plan?->name ?? 'Free';
+    $userRole = $user->roles?->first()?->name ?? 'Owner';
+    
+    // Redirect to subscription if owner on Free plan
+    if (strtolower($userRole) === 'owner' && $currentPlan === 'Free') {
+        return redirect('/subscription');
     }
     return Inertia::render('dashboard/index');
 })->name('dashboard');

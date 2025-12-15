@@ -13,6 +13,7 @@ import LoginPage from './pages/account/login';
 import RegisterPage from './pages/account/register';
 import GetLiveDemoPage from './pages/getlivedemo/index';
 import EcardsPage from './pages/ecards/index';
+import PricePage from './pages/price/index.tsx';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -22,6 +23,7 @@ const pages = {
     'account/register': RegisterPage,
     'getlivedemo/index': GetLiveDemoPage,
     'ecards/index': EcardsPage,
+    'price/index': PricePage,
 };
 
 createInertiaApp({

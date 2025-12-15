@@ -460,6 +460,11 @@ Route::get('/getlivedemo', function () {
     return Inertia::render('getlivedemo/index');
 })->name('getlivedemo');
 
+// Pricing page route
+Route::get('/price', function () {
+    return Inertia::render('price/index');
+})->name('price');
+
 // Ecards landing page
 Route::get('/Ecards', function () {
     return Inertia::render('ecards/index');

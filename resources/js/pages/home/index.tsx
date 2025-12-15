@@ -80,7 +80,7 @@ const Navbar = () => {
             <a href="#loss-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Loss Calculator</a>
             {/* NEW LINK for Recovery Calculator */}
             <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
-            <a href="#pricing" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
+            <a href="/price" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
             <a href="/Ecards" className="text-slate-600 hover:text-blue-600 font-medium transition">Ecards</a>
             {isAuthenticated ? (
               <>
@@ -136,7 +136,7 @@ const Navbar = () => {
               <a href="#loss-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Loss Calculator</a>
               {/* NEW MOBILE LINK for Recovery Calculator */}
               <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
-              <a href="#pricing" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
+              <a href="/price" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
               <a href="/Ecards" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Ecards</a>
               {isAuthenticated ? (
                 <>

@@ -17,6 +17,7 @@ import PricePage from './pages/price/index.tsx';
 import WinBackCalculatorPage from './pages/winback-calulator/index';
 import TermsPage from './pages/terms/index';
 import WinBackPage from './pages/winback/index';
+import AIRecoveryPage from './pages/airecovery/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -30,6 +31,7 @@ const pages = {
     'winback-calulator/index': WinBackCalculatorPage,
     'terms/index': TermsPage,
     'winback/index': WinBackPage,
+    'airecovery/index': AIRecoveryPage,
 };
 
 createInertiaApp({

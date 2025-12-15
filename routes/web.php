@@ -470,6 +470,11 @@ Route::get('/winback', function () {
     return Inertia::render('winback/index');
 })->name('winback');
 
+// AI Review Recovery page
+Route::get('/airecovery', function () {
+    return Inertia::render('airecovery/index');
+})->name('airecovery');
+
 // Ecards landing page
 Route::get('/Ecards', function () {
     return Inertia::render('ecards/index');

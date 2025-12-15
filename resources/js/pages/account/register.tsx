@@ -19,15 +19,8 @@ export default function RegisterPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      const user = auth.user;
-      const currentPlan = user?.subscriptions?.[0]?.subscription_plan?.name || 'Free';
-      const userRole = user?.roles?.[0]?.name?.toLowerCase() || 'owner';
-      
-      if (userRole === 'owner' && currentPlan === 'Free') {
-        window.location.href = '/subscription';
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Redirect all authenticated users to subscription page
+      window.location.href = '/subscription';
     }
   }, [isAuthenticated, auth]);
 
@@ -83,31 +76,11 @@ export default function RegisterPage() {
         localStorage.setItem('auth:token', data.token);
         if (data.user) {
           localStorage.setItem('auth:user', JSON.stringify(data.user));
-          
-          // Check if email is verified
-          if (data.user.email_verified_at) {
-            // Email already verified, redirect to subscription/dashboard
-            const userRole = data.user?.roles?.[0]?.name?.toLowerCase() || 'owner';
-            if (userRole === 'owner') {
-              window.location.href = '/subscription';
-              return;
-            }
-            window.location.href = '/dashboard';
-            return;
-          } else {
-            // Email not verified, redirect to verification page
-            window.location.href = `/account/verify-email?email=${encodeURIComponent(email)}`;
-            return;
-          }
         }
       }
 
-      // Fallback: redirect to verification if we have email
-      if (email) {
-        window.location.href = `/account/verify-email?email=${encodeURIComponent(email)}`;
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Redirect all users to subscription page after signup
+      window.location.href = '/subscription';
     } catch (error) {
       setErrors({ email: ['An error occurred. Please try again.'] });
       setLoading(false);

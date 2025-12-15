@@ -457,13 +457,8 @@ Route::get('/subscription', function () {
     if (!auth('sanctum')->check()) {
         return redirect('/account/login');
     }
-    $user = auth('sanctum')->user();
-    
-    // Check if email is verified
-    if (!$user->email_verified_at) {
-        return redirect('/account/verify-email?email=' . urlencode($user->email));
-    }
-    
+    // Allow access to subscription page even if email not verified
+    // The page will show a notice to verify email
     return Inertia::render('subscription/index');
 })->name('subscription');
 

@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
 
+const BRAND_COLOR = 'bg-blue-700 hover:bg-blue-800';
+const BRAND_TEXT = 'text-blue-700';
+
 const PLANS = [
   { 
     name: 'Starter', 
@@ -94,7 +97,7 @@ export default function SubscriptionPage() {
   const [purchaseError, setPurchaseError] = useState('');
   const [showModal, setShowModal] = useState(false);
 
-  // Redirect if not authenticated or if already has a paid plan
+  // Redirect if not authenticated
   React.useEffect(() => {
     if (!auth?.user) {
       router.visit('/account/login');
@@ -105,7 +108,7 @@ export default function SubscriptionPage() {
     const user = auth.user;
     const currentPlan = user?.subscriptions?.[0]?.subscription_plan;
     const planName = currentPlan?.name || 'Free';
-    const planPrice = currentPlan?.price || 0;
+    const planPrice = currentPlan?.price || currentPlan?.monthly_price || 0;
     
     // If user has a paid plan (price > 0), redirect to dashboard
     if (planPrice > 0 && planName !== 'Free') {
@@ -152,7 +155,7 @@ export default function SubscriptionPage() {
 
   const BrandHeader = () => (
     <div className="flex flex-col items-center mb-6">
-      <i className="fas fa-brain text-4xl text-blue-700"></i>
+      <i className={`fas fa-brain text-4xl ${BRAND_TEXT}`}></i>
       <h1 className="text-4xl font-extrabold text-gray-900 mt-2">Neviane</h1>
       <p className="text-sm text-gray-500 font-semibold tracking-wider">Reputation AI</p>
     </div>
@@ -200,7 +203,7 @@ export default function SubscriptionPage() {
       </ul>
       
       <button 
-        className={`mt-auto w-full py-3 rounded-lg font-bold text-white transition shadow-lg ${plan.isCustom ? plan.color : 'bg-blue-700 hover:bg-blue-800'}`}
+        className={`mt-auto w-full py-3 rounded-lg font-bold text-white transition shadow-lg ${plan.isCustom ? plan.color : BRAND_COLOR}`}
         onClick={() => setSelectedPlan(plan)}
       >
         {plan.cta}
@@ -217,7 +220,7 @@ export default function SubscriptionPage() {
             <tr>
               <th className="py-3 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Feature</th>
               {PLANS.map(p => (
-                <th key={p.name} className={`py-3 px-3 text-center text-xs font-bold uppercase tracking-wider ${p.name === 'Pro' ? 'text-blue-700' : 'text-gray-600'} min-w-[80px]`}>
+                <th key={p.name} className={`py-3 px-3 text-center text-xs font-bold uppercase tracking-wider ${p.name === 'Pro' ? BRAND_TEXT : 'text-gray-600'} min-w-[80px]`}>
                   {p.name}
                 </th>
               ))}
@@ -276,12 +279,33 @@ export default function SubscriptionPage() {
     return null; // Will redirect
   }
 
+  const user = auth.user;
+  const isEmailVerified = user?.email_verified_at !== null && user?.email_verified_at !== undefined;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start font-sans">
       <Head title="Choose Your Plan - Neviane" />
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
       
       <div className="max-w-7xl mx-auto w-full px-4 py-8 sm:py-12">
+        {!isEmailVerified && (
+          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <div className="flex items-center">
+              <i className="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+              <div className="flex-1">
+                <p className="text-sm text-yellow-800">
+                  <strong>Please verify your email address</strong> to complete your subscription. 
+                  <a 
+                    href={`/account/verify-email?email=${encodeURIComponent(user?.email || '')}`}
+                    className="ml-2 text-yellow-900 underline font-semibold hover:text-yellow-700"
+                  >
+                    Verify now →
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {showModal && (
           <Modal 
             title="Request Custom Quote"
@@ -297,7 +321,7 @@ export default function SubscriptionPage() {
             Unlock the full power of Reputation AI. Select the best plan for your business needs.
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            You are currently on the <strong>Free</strong> tier. Choose a plan to unlock all features.
+            You are currently on the <strong>Free</strong> tier.
           </p>
         </div>
 
@@ -360,7 +384,7 @@ export default function SubscriptionPage() {
               <button
                 type="submit"
                 disabled={processing}
-                className="w-full flex justify-center py-3.5 px-4 rounded-lg shadow-lg text-lg font-medium text-white transition duration-200 transform bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className={`w-full flex justify-center py-3.5 px-4 rounded-lg shadow-lg text-lg font-medium text-white transition duration-200 transform ${BRAND_COLOR} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50`}
               >
                 {processing ? (
                   <>
@@ -378,9 +402,9 @@ export default function SubscriptionPage() {
         <div className="max-w-xl mx-auto text-center mt-6">
           <button 
             onClick={() => router.visit('/dashboard')} 
-            className="text-sm text-gray-500 hover:text-blue-500 transition"
+            className="text-sm text-gray-500 hover:text-red-500 transition"
           >
-            Skip for now, go to Dashboard
+            Sign Out of Neviane
           </button>
         </div>
       </div>

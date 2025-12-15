@@ -471,6 +471,11 @@ Route::get('/Ecards', function () {
 })->name('ecards');
 Route::get('/ecards', fn () => redirect('/Ecards'));
 
+// Win-Back Calculator page route
+Route::get('/winback-calulator', function () {
+    return Inertia::render('winback-calulator/index');
+})->name('winback.calculator');
+
 Route::get('/{frontend}', function () {
     return view('blue.pages.dashboard');
 })->where('frontend', MainLayoutComposer::PATTERN_PWA_ROUTES);

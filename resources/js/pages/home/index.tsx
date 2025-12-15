@@ -725,9 +725,12 @@ const RevenueRecoveryCalculator = () => {
                             </div>
                         </div>
                         
-                        <button className="w-full mt-8 py-3 bg-white hover:bg-gray-100 text-green-600 font-bold rounded-lg transition shadow-lg shadow-white/30 flex items-center justify-center gap-2">
-                            See the Win-Back Dashboard <ArrowRight className="h-5 w-5" />
-                        </button>
+                        <a
+                            href="/winback-calulator"
+                            className="w-full mt-8 py-3 bg-white hover:bg-gray-100 text-green-600 font-bold rounded-lg transition shadow-lg shadow-white/30 flex items-center justify-center gap-2"
+                        >
+                            Win-Back Calculator <ArrowRight className="h-5 w-5" />
+                        </a>
                     </div>
                 </div>
             </div>

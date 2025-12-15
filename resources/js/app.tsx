@@ -11,6 +11,8 @@ import HomePage from './pages/home/index';
 import DashboardPage from './pages/dashboard/index';
 import LoginPage from './pages/account/login';
 import RegisterPage from './pages/account/register';
+import GetLiveDemoPage from './pages/getlivedemo/index';
+import EcardsPage from './pages/ecards/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -18,6 +20,8 @@ const pages = {
     'dashboard/index': DashboardPage,
     'account/login': LoginPage,
     'account/register': RegisterPage,
+    'getlivedemo/index': GetLiveDemoPage,
+    'ecards/index': EcardsPage,
 };
 
 createInertiaApp({

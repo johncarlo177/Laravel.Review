@@ -455,6 +455,17 @@ Route::get('/dashboard', function () {
     return Inertia::render('dashboard/index');
 })->name('dashboard');
 
+// Get Live Demo page route
+Route::get('/getlivedemo', function () {
+    return Inertia::render('getlivedemo/index');
+})->name('getlivedemo');
+
+// Ecards landing page
+Route::get('/Ecards', function () {
+    return Inertia::render('ecards/index');
+})->name('ecards');
+Route::get('/ecards', fn () => redirect('/Ecards'));
+
 Route::get('/{frontend}', function () {
     return view('blue.pages.dashboard');
 })->where('frontend', MainLayoutComposer::PATTERN_PWA_ROUTES);

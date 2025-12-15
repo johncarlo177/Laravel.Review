@@ -81,6 +81,7 @@ const Navbar = () => {
             {/* NEW LINK for Recovery Calculator */}
             <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
             <a href="#pricing" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
+            <a href="/Ecards" className="text-slate-600 hover:text-blue-600 font-medium transition">Ecards</a>
             {isAuthenticated ? (
               <>
                 <button 
@@ -136,6 +137,7 @@ const Navbar = () => {
               {/* NEW MOBILE LINK for Recovery Calculator */}
               <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
               <a href="#pricing" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
+              <a href="/Ecards" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Ecards</a>
               {isAuthenticated ? (
                 <>
                   <button 
@@ -201,9 +203,9 @@ const Hero = () => {
             The AI that prevents bad reviews, wins back unhappy customers, and replaces a full-time staff member. Stop 1-star reviews before they hit Google.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2">
+            <a href="/getlivedemo" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2">
               Get Live Demo <ArrowRight className="h-5 w-5" />
-            </button>
+            </a>
             <button className="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
               Try Free for 7 Days
             </button>
@@ -1263,9 +1265,9 @@ const Footer = () => {
         </p>
         
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/50">
+          <a href="/getlivedemo" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/50">
             Get Live Demo
-          </button>
+          </a>
           <button className="bg-transparent border border-slate-600 hover:bg-slate-800 text-white text-lg px-8 py-4 rounded-xl font-bold transition">
             Try Free for 7 Days
           </button>

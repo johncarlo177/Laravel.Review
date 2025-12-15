@@ -18,6 +18,7 @@ import WinBackCalculatorPage from './pages/winback-calulator/index';
 import TermsPage from './pages/terms/index';
 import WinBackPage from './pages/winback/index';
 import AIRecoveryPage from './pages/airecovery/index';
+import NotFoundPage from './pages/errors/404';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -32,6 +33,7 @@ const pages = {
     'terms/index': TermsPage,
     'winback/index': WinBackPage,
     'airecovery/index': AIRecoveryPage,
+    'errors/404': NotFoundPage,
 };
 
 createInertiaApp({

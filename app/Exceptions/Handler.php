@@ -7,6 +7,7 @@ use Throwable;
 use Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Inertia\Inertia;
 
 class Handler extends ExceptionHandler
 {
@@ -58,6 +59,13 @@ class Handler extends ExceptionHandler
 
         /** @var \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface */
         $e = $th;
+
+        // Use Inertia for 404 errors to show the new React 404 page
+        if ($e->getStatusCode() === 404) {
+            return Inertia::render('errors/404')
+                ->toResponse($request)
+                ->setStatusCode(404);
+        }
 
         return response()->view(
             'errors.default',

@@ -49,7 +49,7 @@ export default function DashboardPage() {
         return <FeedbackInbox feedback={MOCK_FEEDBACK} />;
       case 'addcustomer':
         if (['owner', 'manager', 'admin'].includes(userRole))
-          return <AddCustomer />;
+          return <div className="p-10 text-center text-gray-500">Add / Invite Customer - Coming Soon</div>;
         return (
           <div className="p-10 text-center text-red-500">
             Access Denied: You need Manager or Owner privileges for Add Customer.
@@ -77,7 +77,20 @@ export default function DashboardPage() {
     }
   };
 
-  const pageTitle = NAV_ITEMS(userRole).find(item => item.id === view)?.label || 'Dashboard';
+  const getPageTitle = () => {
+    const navItems = NAV_ITEMS(userRole);
+    // Check if it's a child item
+    for (const item of navItems) {
+      if (item.children) {
+        const child = item.children.find(c => c.id === view);
+        if (child) return child.label;
+      }
+      if (item.id === view) return item.label;
+    }
+    return 'Dashboard';
+  };
+
+  const pageTitle = getPageTitle();
 
   return (
     <div className="min-h-screen flex bg-gray-50 font-sans">

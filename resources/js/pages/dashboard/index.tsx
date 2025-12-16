@@ -10,7 +10,6 @@ import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { FeedbackInbox } from './components/feedback/FeedbackInbox';
 import { AddCustomer } from './components/customers/AddCustomer';
 import { AIRecoveryCenter } from './components/recovery/AIRecoveryCenter';
-import { WinBackEngine } from './components/winback/WinBackEngine';
 import { ReviewManager } from './components/reviews/ReviewManager';
 import { QRCodesAndCards } from './components/cards/QRCodesAndCards';
 import { OwnerSettings } from './components/settings/OwnerSettings';
@@ -18,7 +17,7 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
 
 // Data
-import { MOCK_DASHBOARD_STATS, MOCK_FEEDBACK, MOCK_WINBACK_ANALYTICS } from './data/mockData';
+import { MOCK_DASHBOARD_STATS, MOCK_FEEDBACK } from './data/mockData';
 import { NAV_ITEMS } from './data/navigation';
 
 export default function DashboardPage() {
@@ -59,9 +58,6 @@ export default function DashboardPage() {
       case 'recovery':
         if (['owner', 'manager', 'admin'].includes(userRole)) return <AIRecoveryCenter />;
         return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the AI Recovery Center.</div>;
-      case 'winback':
-        if (['owner', 'manager', 'admin'].includes(userRole)) return <WinBackEngine analytics={MOCK_WINBACK_ANALYTICS} />;
-        return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for the Win-Back Engine.</div>;
       case 'reviews':
         return <ReviewManager />;
       case 'cards':

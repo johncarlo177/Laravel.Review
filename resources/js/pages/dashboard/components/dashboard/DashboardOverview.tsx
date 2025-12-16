@@ -1,5 +1,5 @@
 import React from 'react';
-import { Inbox, Heart, Gavel, Filter, Brain, Shield, Handshake, Star, QrCode, Settings, UserPlus } from 'lucide-react';
+import { Inbox, Heart, Gavel, Filter, Brain, Shield, Star, QrCode, Settings, UserPlus } from 'lucide-react';
 import { WidgetCard } from '../shared/WidgetCard';
 import { ButtonCard } from '../shared/ButtonCard';
 import { BRAND_TEXT } from '../../data/constants';
@@ -35,7 +35,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ setView, s
       <ButtonCard title="Feedback Inbox" icon={Inbox} onClick={() => setView('inbox')} />
       <ButtonCard title="Add Customer" icon={UserPlus} onClick={() => setView('addcustomer')} />
       <ButtonCard title="AI Recovery Center" icon={Shield} onClick={() => setView('recovery')} />
-      <ButtonCard title="Win-Back Engine" icon={Handshake} onClick={() => setView('winback')} />
       <ButtonCard title="Review Manager" icon={Star} onClick={() => setView('reviews')} />
       <ButtonCard title="QR Codes & eBusiness Cards" icon={QrCode} onClick={() => setView('cards')} />
     </div>

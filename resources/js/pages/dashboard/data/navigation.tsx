@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   UserPlus,
   MessageSquare,
+  CreditCard,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -36,6 +37,7 @@ export const NAV_ITEMS = (userRole: string): NavItem[] => {
     { id: 'reviews', label: 'Review Manager', icon: Star, roles: ['owner', 'manager', 'staff', 'admin'] },
     { id: 'cards', label: 'QR Codes & Cards', icon: QrCode, roles: ['owner', 'manager', 'admin'] },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['owner', 'manager', 'admin'] },
+    { id: 'billing', label: 'Billing', icon: CreditCard, roles: ['owner', 'admin'] },
     { id: 'settings', label: 'Settings', icon: Settings, roles: ['owner', 'admin'] },
     { id: 'admin', label: 'Super Admin', icon: ShieldCheck, roles: ['admin'] },
   ];

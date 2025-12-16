@@ -12,6 +12,7 @@ import { AddCustomer } from './components/customers/AddCustomer';
 import { AIRecoveryCenter } from './components/recovery/AIRecoveryCenter';
 import { ReviewManager } from './components/reviews/ReviewManager';
 import { QRCodesAndCards } from './components/cards/QRCodesAndCards';
+import { BillingPage } from './components/billing/BillingPage';
 import { OwnerSettings } from './components/settings/OwnerSettings';
 import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
@@ -63,6 +64,9 @@ export default function DashboardPage() {
       case 'cards':
         if (['owner', 'manager', 'admin'].includes(userRole)) return <QRCodesAndCards />;
         return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for QR Code Management.</div>;
+      case 'billing':
+        if (['owner', 'admin'].includes(userRole)) return <BillingPage />;
+        return <div className="p-10 text-center text-red-500">Access Denied: Only Owners can manage Billing.</div>;
       case 'settings':
         if (['owner', 'admin'].includes(userRole)) return <OwnerSettings />;
         return <div className="p-10 text-center text-red-500">Access Denied: Only Owners can manage Settings.</div>;

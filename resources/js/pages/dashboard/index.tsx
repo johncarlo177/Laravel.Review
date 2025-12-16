@@ -50,7 +50,7 @@ export default function DashboardPage() {
         return <FeedbackInbox feedback={MOCK_FEEDBACK} />;
       case 'addcustomer':
         if (['owner', 'manager', 'admin'].includes(userRole))
-          return <div className="p-10 text-center text-gray-500">Add / Invite Customer - Coming Soon</div>;
+          return <AddCustomer />;
         return (
           <div className="p-10 text-center text-red-500">
             Access Denied: You need Manager or Owner privileges for Add Customer.

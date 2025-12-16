@@ -1,771 +1,702 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
+  Home,
+  Settings,
+  CheckCircle,
   Upload,
-  UserPlus,
-  QrCode,
-  List,
+  Plug,
   ArrowLeft,
-  Star,
-  Clipboard,
-  ThumbsUp,
-  MessageCircle,
-  XCircle,
-  ChevronRight,
+  Key,
+  TrendingUp,
+  Send,
+  X,
+  Clock,
+  Filter,
+  List,
+  QrCode,
 } from 'lucide-react';
 
-// Define the external URL for the 5-star rating path
-const EXTERNAL_RATING_URL = 'https://g.co/gemini/share/41635e51d140';
-
-interface Customer {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  serviceDate: string;
-  source: string;
-  serviceType: string;
-}
-
-export const AddCustomer: React.FC = () => {
-  // --- Admin Dashboard State ---
-  const [view, setView] = useState<'upload' | 'manual' | 'qr_code' | 'list'>('upload');
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const appId = 'unique-app-id-123'; // Mock App ID for URL generation
-
-  // --- External Flow State ---
-  // Flow states: 'dashboard', 'conversational_form', 'star_rating', 'final_feedback'
-  const [currentFlow, setCurrentFlow] = useState<'dashboard' | 'conversational_form' | 'star_rating' | 'final_feedback'>('dashboard');
-  const [tempRating, setTempRating] = useState(0); // Stores the selected star rating
-  // Updated state to include serviceType for conversational flow data capture
-  const [customerData, setCustomerData] = useState({ name: '', email: '', phone: '', serviceType: '' });
-
-  // --- Custom Alert Box State and Functions ---
-  const [alert, setAlert] = useState<{ title: string; message: string; type: 'success' | 'error' } | null>(null);
-
-  const alertBox = (title: string, message: string, type: 'success' | 'error') => {
-    setAlert({ title, message, type });
-    setTimeout(() => setAlert(null), 5000); // Auto-hide after 5 seconds
+// Icon Component using Lucide Icons
+const Icon = ({ name, className = "w-5 h-5" }: { name: string; className?: string }) => {
+  const iconMap: Record<string, React.ElementType> = {
+    dashboard: Home,
+    automation: Settings,
+    save: CheckCircle,
+    upload: Upload,
+    complete: CheckCircle,
+    plug: Plug,
+    back: ArrowLeft,
+    key: Key,
+    rate: TrendingUp,
+    send: Send,
+    check: CheckCircle,
+    cross: X,
+    clock: Clock,
+    filter: Filter,
+    list: List,
   };
 
-  // --- Admin Logic ---
-  const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.name.endsWith('.csv')) {
-      const mockCustomer: Customer = {
-        id: Date.now(),
-        name: 'CSV Upload Customer',
-        phone: '555-1234',
-        email: 'csv@example.com',
-        serviceDate: new Date().toISOString().slice(0, 10),
-        source: 'CSV',
-        serviceType: 'N/A - CSV Upload',
-      };
+  const IconComponent = iconMap[name] || Home;
+  return <IconComponent className={className} />;
+};
 
-      setTimeout(() => {
-        setCustomers((prev) => [...prev, mockCustomer]);
-        alertBox('Success', 'CSV processed! 1 customer (mock) added. Automated sending initiated.', 'success');
-        if (event.target) {
-          event.target.value = '';
-        }
-      }, 1000);
-    } else if (file) {
-      alertBox('Error', 'Please upload a valid .csv file.', 'error');
-    }
-  };
+// Helper Functions
+const formatAmericanDate = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  try {
+    const [year, month, day] = dateString.split('-');
+    return `${month}/${day}/${year}`;
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return dateString;
+  }
+};
 
-  const [manualForm, setManualForm] = useState({ name: '', phone: '', email: '', serviceType: '' });
-  const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setManualForm({ ...manualForm, [e.target.name]: e.target.value });
+const isWithinDateRange = (serviceDate: string, days: number) => {
+  if (!serviceDate || days === Infinity) return true;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const service = new Date(serviceDate);
+  return service.getTime() >= cutoff.getTime();
+};
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualForm.name || !manualForm.phone || !manualForm.email) {
-      alertBox('Validation Error', 'Name, Phone, and Email are mandatory fields.', 'error');
+// Generic form placeholder
+const FormPlaceholder = ({ title, fields }: { title: string; fields: any[] }) => (
+  <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+    <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">{title}</h3>
+    <form className="space-y-4">
+      {fields.map(field => (
+        <div key={field.name}>
+          <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+            {field.label}
+          </label>
+          <input
+            type={field.type}
+            name={field.name}
+            id={field.name}
+            placeholder={field.placeholder}
+            disabled={true}
+            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border bg-gray-50 text-gray-600 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+          />
+        </div>
+      ))}
+    </form>
+  </div>
+);
+
+// API Credentials Page
+const APICredentialsPage = ({ navigate }: { navigate: (page: string) => void }) => (
+  <div className="space-y-8">
+    <button 
+      onClick={() => navigate('Automation')}
+      className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium mb-6 transition"
+    >
+      <Icon name="back" className="w-4 h-4 mr-2" /> Back to Setup
+    </button>
+    
+    <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
+      <Icon name="key" className="w-8 h-8 mr-3 text-indigo-600" /> API Credentials
+    </h1>
+    <p className="text-gray-600">
+      Use these keys to integrate your external POS or CRM system for automatic rating request triggers.
+    </p>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <FormPlaceholder
+        title="Integration Keys (Read-Only Placeholder)"
+        fields={[
+          { name: 'api_key', label: 'API Key (Secret)', type: 'text', placeholder: '********************************' },
+          { name: 'webhook_url', label: 'Webhook Endpoint URL', type: 'text', placeholder: 'https://api.platform.com/hooks/...' },
+        ]}
+      />
+      
+      <div className="bg-yellow-50 p-6 rounded-xl shadow-md border border-yellow-200 space-y-3 self-start">
+        <h3 className="text-lg font-bold text-yellow-800">Security Warning</h3>
+        <p className="text-sm text-yellow-700">
+          Treat your API key like a password. Do not share it publicly or commit it to client-side code repositories.
+        </p>
+        <button className="py-2 px-4 text-sm rounded-lg text-white bg-red-600 hover:bg-red-700 transition">
+          Regenerate API Key
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// Customer Selection Page
+const CustomerSelectionPage = ({ 
+  navigate, 
+  setLastActionMessage, 
+  customers, 
+  setCustomers 
+}: {
+  navigate: (page: string) => void;
+  setLastActionMessage: (msg: string | null) => void;
+  customers: any[];
+  setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
+}) => {
+  const [allSelected, setAllSelected] = useState(false);
+  const [dateFilterDays, setDateFilterDays] = useState(90);
+  
+  const filteredCustomers = useMemo(() => {
+    const days = dateFilterDays === 0 ? Infinity : dateFilterDays;
+    return customers.filter(c => isWithinDateRange(c.serviceDate, days));
+  }, [customers, dateFilterDays]);
+  
+  const selectableCustomers = useMemo(() => {
+    return filteredCustomers.filter(c => !c.hasReviewed);
+  }, [filteredCustomers]);
+  
+  const selectedCount = customers.filter(c => c.selected).length;
+  
+  const summaryCounts = useMemo(() => {
+    let newCount = 0;
+    let pendingCount = 0;
+    let reviewedCount = 0;
+    
+    filteredCustomers.forEach(c => {
+      if (c.hasReviewed) {
+        reviewedCount++;
+      } else if (c.linkSent) {
+        pendingCount++;
+      } else {
+        newCount++;
+      }
+    });
+    
+    return {
+      total: filteredCustomers.length,
+      newCount,
+      pendingCount,
+      reviewedCount,
+      eligibleToSend: newCount + pendingCount,
+    };
+  }, [filteredCustomers]);
+
+  const toggleCustomer = (id: number) => {
+    const customer = customers.find(c => c.id === id);
+    const isFilteredOut = !filteredCustomers.some(c => c.id === id);
+    
+    if (customer?.hasReviewed || isFilteredOut) {
       return;
     }
-    const newCustomer: Customer = {
-      id: Date.now(),
-      name: manualForm.name,
-      phone: manualForm.phone,
-      email: manualForm.email,
-      serviceDate: 'N/A',
-      // Explicitly check and trim manual service type
-      serviceType: manualForm.serviceType.trim() || 'N/A - Manual Entry',
-      source: 'Manual',
-    };
-    setCustomers((prev) => [...prev, newCustomer]);
-    setManualForm({ name: '', phone: '', email: '', serviceType: '' });
-    alertBox('Success', `${newCustomer.name} added successfully! Automation triggered.`, 'success');
-  };
-
-  // --- Conversational Form Completion Handler ---
-  const handleConversationalFormComplete = (data: { name: string; email: string; phone: string; serviceType: string }) => {
-    // data structure: { name, email, phone, serviceType }
-    const newCustomer: Customer = {
-      id: Date.now(),
-      name: data.name,
-      phone: data.phone,
-      email: data.email,
-      // Use the newly collected serviceType from the form
-      serviceType: data.serviceType.trim() || 'N/A - QR Intake',
-      serviceDate: new Date().toISOString().slice(0, 10),
-      source: 'QR Code',
-    };
-
-    setCustomers((prev) => [...prev, newCustomer]);
-    setCustomerData(data); // Save data for future reference if needed
-    alertBox('Success', 'Customer details captured. Moving to rating selection.', 'success');
-    setCurrentFlow('star_rating');
-  };
-
-  // --- Star Rating Submission Handler (Moves to Conditional Feedback) ---
-  const handleRatingSubmit = (rating: number) => {
-    setTempRating(rating);
-    setCurrentFlow('final_feedback');
-  };
-
-  // --- Render Flow Management for Customer screens ---
-  if (currentFlow === 'conversational_form') {
-    return <ConversationalForm onSubmit={handleConversationalFormComplete} />;
-  }
-
-  if (currentFlow === 'star_rating') {
-    return (
-      <StarRatingStep
-        onSubmitRating={handleRatingSubmit}
-        onBack={() => setCurrentFlow('conversational_form')}
-      />
+    
+    const updatedCustomers = customers.map(c => 
+      c.id === id ? { ...c, selected: !c.selected } : c
     );
-  }
+    setCustomers(updatedCustomers);
+    
+    const allSelectableAreSelected = selectableCustomers.length > 0 && 
+      selectableCustomers.every(c => updatedCustomers.find(u => u.id === c.id)?.selected);
+    
+    setAllSelected(allSelectableAreSelected);
+  };
 
-  if (currentFlow === 'final_feedback') {
-    return <FinalFeedbackScreen rating={tempRating} onFinish={() => setCurrentFlow('dashboard')} />;
-  }
+  const toggleSelectAll = () => {
+    const newState = !allSelected;
+    setAllSelected(newState);
+    const eligibleIds = new Set(selectableCustomers.map(c => c.id));
+    setCustomers(customers.map(c => ({ 
+      ...c, 
+      selected: eligibleIds.has(c.id) ? newState : c.selected 
+    })));
+  };
+  
+  const handleSendRatings = () => {
+    if (selectedCount > 0) {
+      const updatedCustomers = customers.map(c => {
+        if (c.selected && !c.hasReviewed) {
+          return { ...c, selected: false, linkSent: true };
+        }
+        return c;
+      });
+      setCustomers(updatedCustomers);
+      setAllSelected(false);
+      setLastActionMessage(`Successfully initiated rating requests for ${selectedCount} customer(s). Their status is now 'Pending'.`);
+    } else {
+      console.error('Action failed: Please select at least one customer to send ratings.');
+    }
+  };
+  
+  const getReviewStatus = (customer: any) => {
+    if (customer.hasReviewed) {
+      return { text: 'Reviewed', color: 'text-green-600', bg: 'bg-green-100', icon: 'check' };
+    }
+    if (customer.linkSent) {
+      return { text: 'Pending', color: 'text-yellow-700', bg: 'bg-yellow-100', icon: 'clock' };
+    }
+    return { text: 'New', color: 'text-blue-600', bg: 'bg-blue-100', icon: 'clock' };
+  };
 
-  // --- Default Admin Dashboard Render ---
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans antialiased">
-      {/* Custom Alert Modal */}
-      {alert && (
-        <div
-          role="alert"
-          className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl max-w-sm w-full transition-opacity duration-300 ${
-            alert.type === 'error' ? 'bg-red-500' : 'bg-green-500'
-          } text-white`}
-        >
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold">{alert.title}</h3>
-            <button onClick={() => setAlert(null)} className="text-white opacity-80 hover:opacity-100">
-              &times;
-            </button>
+    <div className="space-y-8">
+      <button 
+        onClick={() => navigate('Automation')}
+        className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium mb-6 transition"
+      >
+        <Icon name="back" className="w-4 h-4 mr-2" /> Back to Setup
+      </button>
+
+      <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
+        <Icon name="list" className="w-8 h-8 mr-3 text-indigo-600" /> Pending Feedback Activity
+      </h1>
+      <p className="text-gray-600">
+        Monitor the status of all customers who have received a feedback request. You may select and resend requests to those who haven't yet reviewed.
+      </p>
+
+      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-4 border-b pb-4">
+          <div className="flex items-center space-x-3">
+            <Icon name="filter" className="text-gray-600 w-5 h-5" />
+            <label htmlFor="date-filter" className="font-semibold text-gray-700 text-sm">Service Date Filter:</label>
+            <select
+              id="date-filter"
+              value={dateFilterDays}
+              onChange={(e) => {
+                setDateFilterDays(parseInt(e.target.value, 10));
+                setAllSelected(false);
+              }}
+              className="p-2 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value={90}>Last 90 Days</option>
+              <option value={180}>Last 180 Days</option>
+              <option value={365}>Last 365 Days</option>
+              <option value={0}>All Time</option>
+            </select>
           </div>
-          <p className="text-sm mt-1">{alert.message}</p>
+          
+          <button 
+            onClick={toggleSelectAll}
+            disabled={selectableCustomers.length === 0}
+            className={`py-2 px-4 rounded-lg text-sm font-bold transition ${
+              allSelected 
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50'
+            }`}
+          >
+            {allSelected ? 'Deselect All' : 'Select All Eligible to Resend'} ({selectableCustomers.length})
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="p-4 rounded-lg bg-indigo-100">
+            <p className="text-xs font-medium text-indigo-700 uppercase">Total in Filter</p>
+            <p className="text-2xl font-bold text-indigo-800">{summaryCounts.total}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-green-100">
+            <p className="text-xs font-medium text-green-700 uppercase">Reviewed</p>
+            <p className="text-2xl font-bold text-green-800">{summaryCounts.reviewedCount}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-red-100">
+            <p className="text-xs font-medium text-red-700 uppercase">New/Unsent</p>
+            <p className="text-2xl font-bold text-red-800">{summaryCounts.newCount}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-yellow-100">
+            <p className="text-xs font-medium text-yellow-700 uppercase">Pending Review</p>
+            <p className="text-2xl font-bold text-yellow-800">{summaryCounts.pendingCount}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">
+          Filtered Customer List ({filteredCustomers.length} Visible)
+        </h2>
+        
+        {filteredCustomers.length === 0 && (
+          <div className="text-center py-10 text-gray-500">
+            No customers found matching the criteria (Last {dateFilterDays === 0 ? 'All Time' : `${dateFilterDays} Days`}).
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resend</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Service Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Sent?</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCustomers.map(customer => {
+                const status = getReviewStatus(customer);
+                const isSelectable = !customer.hasReviewed;
+                return (
+                  <tr 
+                    key={customer.id} 
+                    className={`${customer.hasReviewed ? 'bg-green-50 text-gray-500' : 'hover:bg-gray-50'} ${!isSelectable ? 'opacity-70' : ''}`}
+                  >
+                    <td className="px-3 py-4 whitespace-nowrap">
+                      <input 
+                        type="checkbox" 
+                        checked={customer.selected}
+                        onChange={() => toggleCustomer(customer.id)}
+                        disabled={!isSelectable}
+                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{customer.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
+                      <Icon name="clock" className="w-4 h-4 mr-1" /> {formatAmericanDate(customer.serviceDate)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        customer.linkSent
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {customer.linkSent ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <span className={`flex items-center px-2 py-1 text-xs leading-5 font-semibold rounded-full ${status.color} ${status.bg}`}>
+                        <Icon name={status.icon} className="w-4 h-4 mr-1" />
+                        {status.text}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <button
+        onClick={handleSendRatings}
+        disabled={selectedCount === 0}
+        className={`w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-lg text-xl font-bold transition duration-150 ${
+          selectedCount > 0 
+            ? 'bg-green-600 text-white hover:bg-green-700' 
+            : 'bg-gray-400 text-gray-100 cursor-not-allowed'
+        }`}
+      >
+        <Icon name="send" className="w-6 h-6 mr-3" /> 
+        Resend Feedback Request to {selectedCount} Selected Customer(s)
+      </button>
+    </div>
+  );
+};
+
+// Action Card Component
+const ActionCard = ({ title, description, children, color, icon }: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  color: string;
+  icon: string;
+}) => {
+  const colorClasses: Record<string, { border: string; textClass: string }> = {
+    teal: { border: '#14b8a6', textClass: 'text-teal-500' },
+    orange: { border: '#f97316', textClass: 'text-orange-500' },
+    indigo: { border: '#6366f1', textClass: 'text-indigo-500' },
+    purple: { border: '#a855f7', textClass: 'text-purple-500' },
+    pink: { border: '#ec4899', textClass: 'text-pink-500' },
+  };
+  const colors = colorClasses[color] || { border: '#6b7280', textClass: 'text-gray-500' };
+  
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 space-y-4" style={{ borderLeftColor: colors.border }}>
+      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+        <span className={`w-6 h-6 mr-3 ${colors.textClass}`}>
+          <Icon name={icon} className="w-6 h-6" />
+        </span>
+        {title}
+      </h2>
+      <p className="text-gray-600 border-b pb-4 mb-4">{description}</p>
+      {children}
+    </div>
+  );
+};
+
+// Automation Page
+const AutomationPage = ({ 
+  navigate, 
+  lastActionMessage, 
+  setLastActionMessage, 
+  setCustomers 
+}: {
+  navigate: (page: string) => void;
+  lastActionMessage: string | null;
+  setLastActionMessage: (msg: string | null) => void;
+  setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
+}) => {
+  const [integrationStatus] = useState('Connected');
+  const [isQrCodeVisible, setIsQrCodeVisible] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+
+  const handleManualSend = () => {
+    if (!formName || !formEmail || !formPhone) {
+      setLastActionMessage('Action failed: Please fill out all required fields before sending.');
+      return;
+    }
+    
+    const newCustomer = {
+      id: Date.now(),
+      name: formName,
+      email: formEmail,
+      phone: formPhone,
+      selected: false,
+      serviceDate: new Date().toISOString().split('T')[0],
+      linkSent: true,
+      hasReviewed: false,
+    };
+    
+    setCustomers((prev: any[]) => {
+      const updated = [...prev, newCustomer];
+      return updated;
+    });
+    setFormName('');
+    setFormEmail('');
+    setFormPhone('');
+    setLastActionMessage(`Service marked complete! A new entry for ${formName} was created, and an automated SMS/Email feedback request has been successfully sent.`);
+  };
+
+  React.useEffect(() => {
+    if (lastActionMessage) {
+      const timer = setTimeout(() => {
+        setLastActionMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastActionMessage, setLastActionMessage]);
+
+  return (
+    <div className="space-y-10">
+      <h1 className="text-4xl font-extrabold text-gray-900">Customer Feedback Engine</h1>
+      <p className="text-xl text-gray-600 font-medium">Add customers and automatically send feedback requests when service is completed.</p>
+
+      {lastActionMessage && (
+        <div className={`p-4 border rounded-lg font-medium transition duration-300 ${
+          lastActionMessage.includes('failed') ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'
+        }`}>
+          {lastActionMessage}
         </div>
       )}
 
-      {/* WIDENED CONTENT BLOCK: Increased max-w to 7xl */}
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10">
-        <h1 className="text-3xl font-extrabold text-indigo-700 mb-6 border-b pb-2">
-          Owner Customer Ingestion Dashboard
-        </h1>
-
-        {/* Navigation Tabs (Responsive) */}
-        <div className="flex flex-wrap space-x-1 sm:space-x-2 border-b-2 border-gray-200 mb-8">
-          <TabButton
-            icon={Upload}
-            label="CSV List"
-            isActive={view === 'upload'}
-            onClick={() => setView('upload')}
-          />
-          <TabButton
-            icon={UserPlus}
-            label="Manual Add"
-            isActive={view === 'manual'}
-            onClick={() => setView('manual')}
-          />
-          <TabButton
-            icon={QrCode}
-            label="QR Code Mini Form"
-            isActive={view === 'qr_code'}
-            onClick={() => setView('qr_code')}
-          />
-          <TabButton
-            icon={List}
-            label={`Customer List (${customers.length})`}
-            isActive={view === 'list'}
-            onClick={() => setView('list')}
-          />
-        </div>
-
-        {/* Content Area */}
-        <div className="min-h-[400px]">
-          {view === 'upload' && <UploadCsvSection handleCsvUpload={handleCsvUpload} />}
-
-          {view === 'manual' && (
-            <ManualAddSection
-              form={manualForm}
-              handleChange={handleManualChange}
-              handleSubmit={handleManualSubmit}
-            />
-          )}
-
-          {view === 'qr_code' && (
-            <QRCodeSection
-              onLaunchSim={() => setCurrentFlow('conversational_form')}
-              appId={appId}
-            />
-          )}
-
-          {view === 'list' && <CustomerList customers={customers} />}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Reusable Tab Button Component
-const TabButton: React.FC<{
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}> = ({ icon: Icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center space-x-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition duration-200 ease-in-out whitespace-nowrap ${
-      isActive
-        ? 'bg-indigo-500 text-white shadow-lg'
-        : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-600'
-    }`}
-  >
-    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-    <span>{label}</span>
-  </button>
-);
-
-// --- 3. QR Code Mini Form Section (Admin View) ---
-const QRCodeSection: React.FC<{ onLaunchSim: () => void; appId: string }> = ({ onLaunchSim, appId }) => {
-  const miniFormUrl = `https://your-platform.com/miniform?app=${appId}`;
-  const qrCodePlaceholderUrl = `https://placehold.co/300x300/1e40af/ffffff?text=SCAN%20TO%20RATE%0A%5B${appId}%5D`;
-
-  const copyToClipboard = () => {
-    const tempInput = document.createElement('input');
-    tempInput.value = miniFormUrl;
-    document.body.appendChild(tempInput);
-    tempInput.select();
-    document.execCommand('copy');
-    document.body.removeChild(tempInput);
-    // NOTE: This alert is for the Admin Dashboard simulation, which is acceptable here.
-    alert('Link copied to clipboard!');
-  };
-
-  return (
-    <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col md:flex-row gap-8 items-center">
-      <div className="w-full md:w-1/2">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-          <QrCode className="w-6 h-6 mr-3 text-indigo-500" /> QR Code Mini Form Setup
-        </h2>
-        <p className="text-gray-600 mb-4">
-          This QR code links directly to your unique Mini Form, which includes **mandatory contact
-          collection and optional service description**.
-        </p>
-
-        <div className="space-y-3 mb-6">
-          <label className="text-sm font-medium text-gray-700 block">Unique Mini Form URL</label>
-          <div className="flex w-full">
-            <input
-              type="text"
-              readOnly
-              value={miniFormUrl}
-              className="flex-grow p-3 border border-gray-300 rounded-l-lg bg-gray-50 text-sm overflow-x-auto min-w-0"
-            />
-            <button
-              onClick={copyToClipboard}
-              className="flex-shrink-0 flex items-center p-3 bg-indigo-500 text-white rounded-r-lg hover:bg-indigo-600 transition duration-150 text-sm font-medium whitespace-nowrap"
+      <div className="grid grid-cols-1 gap-8">
+        <ActionCard 
+          title="Automatic Send (POS / Booking Integration)" 
+          description="Customers are added automatically when a service is marked complete." 
+          color="teal" 
+          icon="plug"
+        >
+          <div className="flex items-center space-x-4 pt-2">
+            <span className={`px-4 py-1 text-sm font-semibold rounded-full ${
+              integrationStatus === 'Connected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              Status: {integrationStatus}
+            </span>
+            <button 
+              onClick={() => navigate('APICredentials')} 
+              className="py-2 px-4 text-sm rounded-lg text-white bg-teal-600 hover:bg-teal-700 transition flex items-center font-medium shadow-md"
             >
-              <Clipboard className="w-4 h-4 mr-1 sm:mr-2" />
-              Copy Link
+              <Icon name="key" className="w-4 h-4 mr-2" /> View API Credentials
+            </button>
+          </div>
+        </ActionCard>
+
+        <ActionCard 
+          title="Add Customers in Bulk (CSV Upload)" 
+          description="Upload past or offline customers and send feedback requests automatically." 
+          color="orange" 
+          icon="upload"
+        >
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input type="file" id="csv-upload" className="hidden" accept=".csv" />
+            <label htmlFor="csv-upload" className="cursor-pointer py-3 px-6 rounded-lg text-lg font-bold text-white bg-orange-600 hover:bg-orange-700 transition inline-flex items-center shadow-lg">
+              <Icon name="upload" className="w-5 h-5 mr-2" /> Upload & Send
+            </label>
+            <p className="text-sm text-gray-500 mt-3">Required columns: Name, Email, Phone</p>
+          </div>
+        </ActionCard>
+
+        <ActionCard 
+          title="Add Customer & Send Now" 
+          description="Add a customer manually and send a feedback request instantly." 
+          color="indigo" 
+          icon="send"
+        >
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700">Customer Name (Required)</label>
+              <input
+                type="text"
+                id="customer_name"
+                placeholder="Enter full name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+              />
+            </div>
+            <div>
+              <label htmlFor="customer_email" className="block text-sm font-medium text-gray-700">Email Address (Required)</label>
+              <input
+                type="email"
+                id="customer_email"
+                placeholder="john@example.com"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+              />
+            </div>
+            <div>
+              <label htmlFor="customer_phone" className="block text-sm font-medium text-gray-700">Phone Number (Required)</label>
+              <input
+                type="tel"
+                id="customer_phone"
+                placeholder="555-123-4567"
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleManualSend}
+            className="mt-4 w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150"
+          >
+            <Icon name="complete" className="w-5 h-5 mr-3" /> Mark Service Completed & Send Feedback
+          </button>
+        </ActionCard>
+
+        <ActionCard 
+          title="Review Pending & Past Activity" 
+          description="View the current status (New, Pending, Reviewed) of all customers who have received a request." 
+          color="pink" 
+          icon="list"
+        >
+          <button
+            onClick={() => navigate('CustomerSelection')}
+            className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-lg font-bold text-pink-600 bg-pink-100 hover:bg-pink-200 transition duration-150"
+          >
+            <Icon name="list" className="w-5 h-5 mr-3" /> Go to Activity Management
+          </button>
+        </ActionCard>
+
+        <ActionCard 
+          title="In-Store QR Feedback" 
+          description="Let customers scan and leave feedback without staff entry." 
+          color="purple" 
+          icon="rate"
+        >
+          <button
+            onClick={() => setIsQrCodeVisible(true)}
+            className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-lg font-bold text-purple-600 bg-purple-100 hover:bg-purple-200 transition duration-150"
+          >
+            <Icon name="rate" className="w-5 h-5 mr-3" /> Show Live Feedback QR Code
+          </button>
+        </ActionCard>
+      </div>
+      
+      {isQrCodeVisible && (
+        <div 
+          className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setIsQrCodeVisible(false)}
+        >
+          <div 
+            className="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full space-y-6 transform transition-all duration-300 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-extrabold text-gray-900 border-b pb-2 text-center flex items-center justify-center">
+              <Icon name="rate" className="w-6 h-6 mr-2 text-indigo-600" /> Live Feedback Form Scan
+            </h3>
+            <p className="text-gray-600 text-center text-sm">
+              Have the customer scan this code now to access the short feedback form directly.
+            </p>
+            
+            <div className="flex justify-center py-4 bg-gray-50 rounded-lg">
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://example.com/service-form/widget"
+                alt="Scannable QR Code for Customer Feedback Form"
+                className="w-64 h-64 border-4 border-gray-200 rounded-lg"
+                onError={(e: any) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://placehold.co/250x250/cccccc/333333?text=QR+Code+Unavailable";
+                }}
+              />
+            </div>
+            
+            <p className="text-center text-xs text-gray-500">Links to: https://example.com/service-form/widget</p>
+            <button
+              onClick={() => setIsQrCodeVisible(false)}
+              className="w-full py-3 px-4 text-lg font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 transition shadow-lg"
+            >
+              Close Scanner View
             </button>
           </div>
         </div>
-
-        <button
-          onClick={onLaunchSim}
-          className="w-full py-3 px-4 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 transition duration-200"
-        >
-          Simulate Customer Scan & Mandatory Intake Flow
-        </button>
-      </div>
-
-      <div className="w-full md:w-1/2 flex justify-center items-center p-4 bg-gray-50 rounded-lg border">
-        <img
-          src={qrCodePlaceholderUrl}
-          alt="Simulated QR Code"
-          className="w-48 h-48 sm:w-64 sm:h-64 rounded-lg shadow-xl"
-        />
-      </div>
+      )}
     </div>
   );
 };
 
-// --- Conversational Form Component (MANDATORY FIELDS & MODERN DESIGN) ---
-interface ConversationalFormProps {
-  onSubmit: (data: { name: string; email: string; phone: string; serviceType: string }) => void;
-}
-
-const ConversationalForm: React.FC<ConversationalFormProps> = ({ onSubmit }) => {
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState({ name: '', email: '', phone: '', serviceType: '' });
-  const [input, setInput] = useState('');
-  const [error, setError] = useState('');
-
-  // Define the conversational flow (Updated with optional serviceType)
-  const flow = [
-    {
-      label: 'name',
-      question: "What's your first name so we can personalize your experience?",
-      confirmation: (name: string) => `Got it, thanks ${name}!`,
-      type: 'text',
-      validate: (value: string) => (value.trim().length > 0 ? null : 'Your name is required to proceed.'),
-    },
-    {
-      label: 'email',
-      question: (name: string) =>
-        `Great, ${data.name}! We'll need your email address to send your receipt and updates.`,
-      confirmation: (email: string) => `Perfect, we'll use ${email} to send updates.`,
-      type: 'email',
-      validate: (value: string) =>
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : 'A valid email is required to proceed.',
-    },
-    {
-      label: 'phone',
-      question: (name: string) =>
-        `Thank you, ${data.name}! Please share your phone number for quick service updates via text.`,
-      confirmation: (phone: string) => `You're all set! We can now text you updates at ${phone}.`,
-      type: 'tel',
-      validate: (value: string) =>
-        value.replace(/\D/g, '').length >= 10 ? null : 'A valid 10-digit phone number is required to proceed.',
-    },
-    {
-      label: 'serviceType', // New optional field
-      question: (name: string) =>
-        `(${data.name}, optional) Can you briefly describe the service you received today (e.g., Oil Change, AC Repair, Haircut)?`,
-      confirmation: (desc: string) =>
-        desc.trim() ? `Service recorded as: ${desc}.` : "No service description provided. That's okay!",
-      type: 'text',
-      validate: (value: string) => {
-        if (value.trim() === '') return null; // Allows skipping
-        return value.trim().length < 3 ? 'Description must be at least 3 characters long if entered.' : null;
-      },
-    },
+// Main Component
+export const AddCustomer: React.FC = () => {
+  const initialCustomers = [
+    { id: 1, name: 'Alice Smith', email: 'alice@example.com', phone: '555-0001', selected: false, serviceDate: '2025-12-10', linkSent: true, hasReviewed: true },
+    { id: 2, name: 'Bob Johnson', email: 'bob@example.com', phone: '555-0002', selected: false, serviceDate: '2025-12-12', linkSent: false, hasReviewed: false },
+    { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', phone: '555-0003', selected: false, serviceDate: '2025-11-25', linkSent: true, hasReviewed: false },
+    { id: 4, name: 'Dana Scully', email: 'dana@example.com', phone: '555-0004', selected: false, serviceDate: '2025-12-11', linkSent: false, hasReviewed: false },
+    { id: 5, name: 'Fox Mulder', email: 'fox@example.com', phone: '555-0005', selected: false, serviceDate: '2025-08-01', linkSent: true, hasReviewed: true },
+    { id: 6, name: 'Gillian Jacobs', email: 'gillian@example.com', phone: '555-0006', selected: false, serviceDate: '2025-12-13', linkSent: false, hasReviewed: false },
+    { id: 7, name: 'Jess Day', email: 'jess@example.com', phone: '555-0007', selected: false, serviceDate: '2025-09-01', linkSent: true, hasReviewed: false },
   ];
+  
+  const [currentPage, setCurrentPage] = useState('Automation');
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [lastActionMessage, setLastActionMessage] = useState<string | null>(null);
 
-  const currentField = flow[step];
-  const currentQuestion =
-    typeof currentField?.question === 'function' ? currentField.question(data.name) : currentField?.question;
-
-  const handleNext = () => {
-    setError('');
-
-    // --- Step 1: Input Validation & Save ---
-    if (currentField) {
-      const validationError = currentField.validate(input);
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
-
-      // Save data
-      setData((prev) => ({ ...prev, [currentField.label]: input.trim() }));
-
-      // Show confirmation screen
-      setStep(step + 0.5);
-      setInput('');
-    }
+  const navigate = (page: string) => {
+    setCurrentPage(page);
+    setLastActionMessage(null);
   };
 
-  // Handles moving past the confirmation screen
-  const handleConfirmAdvance = () => {
-    if (Math.floor(step) < flow.length - 1) {
-      setStep(Math.ceil(step)); // Move to the next full step
-      setInput('');
-    } else {
-      // Final confirmation, complete the form
-      onSubmit(data);
-    }
-  };
-
-  // --- Render logic for the conversation ---
-  const renderConversation = () => {
-    // Confirmation Screen (e.g., step 0.5, 1.5, 2.5, 3.5)
-    if (step % 1 !== 0) {
-      const confirmedText = data[flow[Math.floor(step)].label as keyof typeof data];
-      const confirmationMessage = flow[Math.floor(step)].confirmation(confirmedText);
-
-      return (
-        <>
-          <div className="bg-indigo-100 p-4 rounded-xl text-indigo-800 font-medium mb-8 border border-indigo-200">
-            {confirmationMessage}
-          </div>
-          <button
-            onClick={handleConfirmAdvance}
-            className="w-full py-4 text-lg font-bold text-white bg-green-500 rounded-xl hover:bg-green-600 transition duration-200 shadow-lg hover:shadow-xl flex items-center justify-center"
-          >
-            Continue <ChevronRight className="w-6 h-6 ml-2" />
-          </button>
-        </>
-      );
-    }
-
-    // Question Screen (e.g., step 0, 1, 2, 3)
-    const isOptionalStep = currentField.label === 'serviceType';
-
-    return (
-      <div className="space-y-8">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 leading-snug">{currentQuestion}</h2>
-
-        <input
-          type={currentField.type}
-          placeholder={`Enter your ${currentField.label}`}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-xl placeholder-gray-400"
-        />
-
-        {error && <p className="text-red-600 text-sm font-medium pt-2">{error}</p>}
-
-        <div className="pt-4">
-          <button
-            onClick={handleNext}
-            className="w-full py-4 text-xl font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-lg hover:shadow-xl"
-          >
-            {isOptionalStep ? 'Next (Optional)' : 'Next'}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-sm sm:max-w-lg bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border-t-8 border-indigo-600">
-        <h1 className="text-3xl font-bold text-indigo-700 mb-8 border-b pb-2">Service Feedback</h1>
-
-        {renderConversation()}
-
-        {/* Total steps include 4 data points + 1 rating step = 5 total flow steps */}
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Step {Math.ceil(step) + 1} of {flow.length + 1}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// --- 5. Star Rating Step (UNMODIFIED) ---
-const RatingStar: React.FC<{ size: number; isFilled: boolean }> = ({ size, isFilled }) => (
-  <Star
-    className={`w-6 h-6 transition-transform duration-100 ${
-      isFilled ? 'text-yellow-400 fill-yellow-400 scale-110' : 'text-gray-300 hover:text-yellow-300'
-    }`}
-  />
-);
-
-const StarRatingStep: React.FC<{
-  onSubmitRating: (rating: number) => void;
-  onBack: () => void;
-}> = ({ onSubmitRating, onBack }) => {
-  const [hoverRating, setHoverRating] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-
-  const handleSubmit = () => {
-    if (selectedRating > 0) {
-      onSubmitRating(selectedRating);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-indigo-50 p-4">
-      <div className="w-full max-w-sm sm:max-w-md bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border-t-8 border-yellow-500 text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">How was your experience today?</h1>
-        <p className="text-gray-600 mb-8 text-sm sm:text-base">
-          Please select your rating below (1 star = Poor, 5 stars = Excellent).
-        </p>
-
-        {/* Responsive Stars */}
-        <div className="flex justify-center space-x-2 sm:space-x-3 mb-10">
-          {[1, 2, 3, 4, 5].map((index) => (
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'Automation':
+        return (
+          <AutomationPage 
+            navigate={navigate} 
+            lastActionMessage={lastActionMessage} 
+            setLastActionMessage={setLastActionMessage} 
+            setCustomers={setCustomers} 
+          />
+        );
+      case 'APICredentials':
+        return <APICredentialsPage navigate={navigate} />;
+      case 'CustomerSelection':
+        return (
+          <CustomerSelectionPage 
+            navigate={navigate} 
+            setLastActionMessage={setLastActionMessage} 
+            customers={customers} 
+            setCustomers={setCustomers} 
+          />
+        );
+      default:
+        return (
+          <div className="text-center py-20">
+            <h1 className="text-4xl font-bold text-red-600">404 - Page Not Found</h1>
             <button
-              key={index}
-              onClick={() => setSelectedRating(index)}
-              onMouseEnter={() => setHoverRating(index)}
-              onMouseLeave={() => setHoverRating(0)}
-              className="p-1 sm:p-2 rounded-full transform transition-all duration-200 focus:outline-none"
+              onClick={() => navigate('Automation')}
+              className="mt-6 py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              <RatingStar size={12} isFilled={index <= (hoverRating || selectedRating)} />
+              Go to Setup
             </button>
-          ))}
-        </div>
+          </div>
+        );
+    }
+  };
 
-        <p className="font-semibold text-lg mb-6 h-6 text-indigo-700">
-          {selectedRating > 0 ? `Selected: ${selectedRating} Star${selectedRating !== 1 ? 's' : ''}` : 'Tap a star to select a rating'}
-        </p>
-
-        <button
-          onClick={handleSubmit}
-          disabled={selectedRating === 0}
-          className={`w-full py-3 text-lg font-semibold text-white rounded-lg shadow-md transition duration-200 ${
-            selectedRating === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-          }`}
-        >
-          Submit Rating
-        </button>
-
-        <button
-          onClick={onBack}
-          className="mt-4 py-2 px-4 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-200 flex items-center mx-auto"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Details
-        </button>
-      </div>
+  return (
+    <div className="space-y-8">
+      {renderPage()}
     </div>
   );
 };
-
-// --- 6. Conditional Final Feedback Screen (UNMODIFIED) ---
-const FinalFeedbackScreen: React.FC<{ rating: number; onFinish: () => void }> = ({ rating, onFinish }) => {
-  // 5 Stars Logic: Encourage external review
-  if (rating === 5) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-indigo-50 p-4">
-        <div className="w-full max-w-sm sm:max-w-md bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border-t-8 border-green-500 text-center">
-          <ThumbsUp className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">That's Great!</h1>
-          <p className="text-gray-600 mb-8 text-sm sm:text-base">
-            Thank you for the 5-star rating! We would be delighted if you could share your positive experience on
-            our external rating page.
-          </p>
-
-          {/* External Rating Link */}
-          <a
-            href={EXTERNAL_RATING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-full py-3 px-4 text-lg font-semibold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 transition duration-200 mb-6"
-          >
-            <Star className="w-5 h-5 mr-2 fill-white" /> Leave External Review
-          </a>
-
-          <button
-            onClick={onFinish}
-            className="py-2 px-4 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition duration-200 flex items-center mx-auto"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Done
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 1-4 Stars Logic: Internal feedback/Follow-up (Deflection)
-  else {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-indigo-50 p-4">
-        <div className="w-full max-w-sm sm:max-w-md bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border-t-8 border-red-500 text-center">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">We're Sorry to Hear That.</h1>
-          <p className="text-gray-600 mb-8 text-sm sm:text-base">
-            Your feedback is important. A manager has been notified and will contact you via your provided phone or
-            email shortly to address your concerns directly.
-          </p>
-
-          <button
-            onClick={onFinish}
-            className="w-full py-3 px-4 text-lg font-semibold text-white bg-yellow-500 rounded-lg shadow-md hover:bg-yellow-600 transition duration-200 mb-6"
-          >
-            <MessageCircle className="w-5 h-5 mr-2" /> Close & Await Contact
-          </button>
-
-          <button
-            onClick={onFinish}
-            className="py-2 px-4 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition duration-200 flex items-center mx-auto"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Done
-          </button>
-        </div>
-      </div>
-    );
-  }
-};
-
-// --- Admin Helper Sections (CSV, Manual, List) ---
-const UploadCsvSection: React.FC<{
-  handleCsvUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}> = ({ handleCsvUpload }) => (
-  <div className="bg-white p-6 rounded-xl border-2 border-dashed border-gray-300 hover:border-indigo-400 transition duration-300">
-    <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-      <Upload className="w-6 h-6 mr-3 text-indigo-500" /> Upload CSV List
-    </h2>
-    <p className="text-gray-600 mb-6">
-      Fields required for automated sending:{' '}
-      <span className="font-semibold text-indigo-600">Name, Phone, Email, Service Date</span>. Service description
-      is assumed to be the same for the whole batch.
-    </p>
-
-    <label
-      htmlFor="csv-upload"
-      className="block w-full py-3 px-4 text-center text-white bg-indigo-600 rounded-lg cursor-pointer hover:bg-indigo-700 transition duration-200 shadow-md"
-    >
-      Select CSV File to Upload
-    </label>
-    <input id="csv-upload" type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
-
-    <p className="mt-4 text-sm text-gray-500">
-      <span className="font-bold text-red-500">*</span> Automated sending will be triggered immediately after
-      ingestion.
-    </p>
-  </div>
-);
-
-const ManualAddSection: React.FC<{
-  form: { name: string; phone: string; email: string; serviceType: string };
-  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSubmit: (e: React.FormEvent) => void;
-}> = ({ form, handleChange, handleSubmit }) => (
-  <form onSubmit={handleSubmit} className="p-6 bg-white border border-gray-200 rounded-xl shadow-lg">
-    <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-      <UserPlus className="w-6 h-6 mr-3 text-indigo-500" /> Manual Customer Entry
-    </h2>
-
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-      <InputField
-        id="name"
-        name="name"
-        label="Name"
-        value={form.name}
-        onChange={handleChange}
-        required
-        placeholder="Customer Full Name"
-      />
-      <InputField
-        id="phone"
-        name="phone"
-        label="Phone"
-        value={form.phone}
-        onChange={handleChange}
-        required
-        type="tel"
-        placeholder="e.g., (555) 123-4567"
-      />
-      <InputField
-        id="email"
-        name="email"
-        label="Email"
-        value={form.email}
-        onChange={handleChange}
-        required
-        type="email"
-        placeholder="email@domain.com"
-      />
-
-      {/* Updated Field for consistency */}
-      <InputField
-        id="serviceType"
-        name="serviceType"
-        label="Service Description (Optional)"
-        value={form.serviceType}
-        onChange={handleChange}
-        required={false}
-        placeholder="e.g., Oil Change, AC Repair, Haircut"
-      />
-    </div>
-
-    <button
-      type="submit"
-      className="mt-8 w-full py-3 px-4 text-lg font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 transition duration-200"
-    >
-      Add Customer & Begin Automation
-    </button>
-  </form>
-);
-
-const InputField: React.FC<{
-  id: string;
-  name: string;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  required?: boolean;
-  type?: string;
-  placeholder?: string;
-}> = ({ id, name, label, value, onChange, required, type = 'text', placeholder }) => (
-  <div className="space-y-2">
-    <label htmlFor={id} className="text-sm font-medium text-gray-700 block">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <input
-      type={type}
-      id={id}
-      name={name}
-      value={value}
-      onChange={onChange}
-      required={required}
-      placeholder={placeholder}
-      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
-    />
-  </div>
-);
-
-const CustomerList: React.FC<{ customers: Customer[] }> = ({ customers }) => (
-  <div className="overflow-x-auto bg-white p-6 rounded-xl shadow-inner border border-gray-100">
-    <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-      <List className="w-6 h-6 mr-3 text-indigo-500" /> Customer Records ({customers.length})
-    </h2>
-
-    {customers.length === 0 ? (
-      <div className="text-center py-10 text-gray-500 border rounded-lg">No customers added yet.</div>
-    ) : (
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-              Email
-            </th>
-            {/* Consistent Label in List */}
-            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-              Service Description
-            </th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {customers.map((c) => (
-            <tr key={c.id} className="hover:bg-indigo-50 transition duration-100">
-              <td className="px-3 py-3 text-sm font-medium text-gray-900">{c.name}</td>
-              <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{c.phone}</td>
-              <td className="px-3 py-3 text-sm text-gray-500 hidden sm:table-cell">{c.email}</td>
-              {/* Display the captured service description */}
-              <td className="px-3 py-3 text-sm text-gray-500 hidden md:table-cell">{c.serviceType || 'N/A'}</td>
-              <td className="px-3 py-3 text-sm whitespace-nowrap">
-                <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    c.source === 'QR Code'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : c.source === 'CSV'
-                      ? 'bg-indigo-100 text-indigo-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}
-                >
-                  {c.source}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )}
-  </div>
-);
-

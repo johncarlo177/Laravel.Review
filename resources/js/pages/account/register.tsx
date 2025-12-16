@@ -79,8 +79,11 @@ export default function RegisterPage() {
         }
       }
 
-      // Redirect all users to subscription page after signup
+      // Always redirect to subscription page after successful signup
+      // Don't check email verification - let subscription page handle that
+      setLoading(false);
       window.location.href = '/subscription';
+      return;
     } catch (error) {
       setErrors({ email: ['An error occurred. Please try again.'] });
       setLoading(false);

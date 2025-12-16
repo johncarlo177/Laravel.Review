@@ -14,16 +14,8 @@ export default function LoginPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      const user = auth.user;
-      const currentPlan = user?.subscriptions?.[0]?.subscription_plan?.name || 'Free';
-      const userRole = user?.roles?.[0]?.name?.toLowerCase() || 'owner';
-      
-      // Redirect to subscription if owner on Free plan, otherwise dashboard
-      if (userRole === 'owner' && currentPlan === 'Free') {
-        window.location.href = '/subscription';
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Always redirect to subscription page after login
+      window.location.href = '/subscription';
     }
   }, [isAuthenticated, auth]);
 
@@ -69,18 +61,14 @@ export default function LoginPage() {
             return;
           }
           
-          // Check if user should go to subscription page
-          const currentPlan = data.user?.subscriptions?.[0]?.subscription_plan?.name || 'Free';
-          const userRole = data.user?.roles?.[0]?.name?.toLowerCase() || 'owner';
-          
-          if (userRole === 'owner' && currentPlan === 'Free') {
-            window.location.href = '/subscription';
-            return;
-          }
+          // Always redirect to subscription page after login
+          window.location.href = '/subscription';
+          return;
         }
       }
 
-      window.location.href = '/dashboard';
+      // Fallback: redirect to subscription (assume unpaid)
+      window.location.href = '/subscription';
     } catch (error) {
       setErrors({ email: ['An error occurred. Please try again.'] });
       setLoading(false);

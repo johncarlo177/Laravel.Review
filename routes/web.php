@@ -474,11 +474,12 @@ Route::get('/dashboard', function () {
         return redirect('/account/verify-email?email=' . urlencode($user->email));
     }
     
-    $currentPlan = $user->subscriptions?->first()?->subscription_plan?->name ?? 'Free';
-    $userRole = $user->roles?->first()?->name ?? 'Owner';
+    $subscriptionPlan = $user->subscriptions?->first()?->subscription_plan;
+    $currentPlan = $subscriptionPlan?->name ?? 'Free';
+    $planPrice = $subscriptionPlan?->price ?? $subscriptionPlan?->monthly_price ?? 0;
     
-    // Redirect to subscription if owner on Free plan
-    if (strtolower($userRole) === 'owner' && $currentPlan === 'Free') {
+    // Redirect unpaid customers (Free plan or price = 0) to subscription page
+    if ($currentPlan === 'Free' || $planPrice == 0) {
         return redirect('/subscription');
     }
     return Inertia::render('dashboard/index');

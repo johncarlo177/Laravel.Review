@@ -474,14 +474,7 @@ Route::get('/dashboard', function () {
         return redirect('/account/verify-email?email=' . urlencode($user->email));
     }
     
-    $subscriptionPlan = $user->subscriptions?->first()?->subscription_plan;
-    $currentPlan = $subscriptionPlan?->name ?? 'Free';
-    $planPrice = $subscriptionPlan?->price ?? $subscriptionPlan?->monthly_price ?? 0;
-    
-    // Redirect unpaid customers (Free plan or price = 0) to subscription page
-    if ($currentPlan === 'Free' || $planPrice == 0) {
-        return redirect('/subscription');
-    }
+    // Allow access to dashboard regardless of subscription status
     return Inertia::render('dashboard/index');
 })->name('dashboard');
 

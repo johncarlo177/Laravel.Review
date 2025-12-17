@@ -206,7 +206,7 @@ const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="/getlivedemo" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2">
-              Get Live Demo <ArrowRight className="h-5 w-5" />
+              Learn More <ArrowRight className="h-5 w-5" />
             </a>
             <button className="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
               Try Free for 7 Days

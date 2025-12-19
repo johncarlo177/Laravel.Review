@@ -71,7 +71,7 @@ export default function DashboardPage() {
         if (['owner', 'admin'].includes(userRole)) return <OwnerSettings />;
         return <div className="p-10 text-center text-red-500">Access Denied: Only Owners can manage Settings.</div>;
       case 'analytics':
-        if (['owner', 'manager', 'admin'].includes(userRole)) return <AnalyticsView />;
+        if (['owner', 'manager', 'admin'].includes(userRole)) return <AnalyticsView userRole={userRole} />;
         return <div className="p-10 text-center text-red-500">Access Denied: You need Manager or Owner privileges for Analytics.</div>;
       case 'admin':
         if (userRole === 'admin') return <SuperAdminDashboard />;

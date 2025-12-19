@@ -529,6 +529,11 @@ Route::get('/demo', function () {
     return Inertia::render('demo/index');
 })->name('demo');
 
+// Resources page route
+Route::get('/resources', function () {
+    return Inertia::render('resources/index');
+})->name('resources');
+
 Route::get('/{frontend}', function () {
     return view('blue.pages.dashboard');
 })->where('frontend', MainLayoutComposer::PATTERN_PWA_ROUTES);

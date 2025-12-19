@@ -186,7 +186,7 @@ const Navbar = () => {
                 e.preventDefault(); 
                 setIsResourcesOpen(!isResourcesOpen); 
                 setIsSolutionsOpen(false); 
-              }} 
+              }}
               className={`flex items-center gap-1.5 transition-colors focus:outline-none py-2 ${isResourcesOpen ? 'text-white' : 'hover:text-white'}`}
             >
               Resources <ChevronDown size={14} className={`transition-transform duration-300 ${isResourcesOpen ? 'rotate-180' : ''}`} />

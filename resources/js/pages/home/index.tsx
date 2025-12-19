@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
-  ShieldCheck, 
+  Shield, 
   Star, 
   MessageSquare, 
   UserX, 
@@ -29,129 +29,299 @@ import {
   RotateCcw,
   Scale,
   Calculator,
-  LogOut
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  RefreshCcw,
+  Store
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePage, router } from '@inertiajs/react';
-import { LiveSimulationSection } from './components/LiveSimulationSection';
 
 // --- Components ---
 const Navbar = () => {
-  console.log('Navbar');
   const [isOpen, setIsOpen] = useState(false);
+  const [isSolutionsOpen, setIsSolutionsOpen] = useState(false);
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [isLocalBusinessOpen, setIsLocalBusinessOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const solutionsRef = useRef<HTMLDivElement>(null);
+  const resourcesRef = useRef<HTMLDivElement>(null);
   const { auth } = usePage().props as any;
   const isAuthenticated = auth?.user !== null && auth?.user !== undefined;
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (solutionsRef.current && !solutionsRef.current.contains(event.target as Node)) { 
+        setIsSolutionsOpen(false); 
+        setIsLocalBusinessOpen(false); 
+      }
+      if (resourcesRef.current && !resourcesRef.current.contains(event.target as Node)) { 
+        setIsResourcesOpen(false); 
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => { 
+      window.removeEventListener('scroll', handleScroll); 
+      document.removeEventListener('mousedown', handleClickOutside); 
+    };
+  }, []);
+
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-    
-    // Clear authentication data from localStorage
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth:token');
       localStorage.removeItem('auth:user');
-      // Also clear from sessionStorage just in case
       sessionStorage.removeItem('auth:token');
       sessionStorage.removeItem('auth:user');
-      
-      // Clear the token cookie that might be used for authentication
       document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     }
-    
-    // Force a full page reload to ensure fresh auth state
-    // Use the logout route which handles both Auth0 and standard logout
-    // The Auth0Controller will check if Auth0 is enabled and handle accordingly
-    // Adding a timestamp to prevent caching
     window.location.href = '/auth0/logout?' + new Date().getTime();
   };
 
+  const solutionsItems = [
+    { title: "AI Recovery (1★ Prevention)", icon: <Shield size={16} />, href: "/airecovery" },
+    { title: "Win-Back Engine (Bring Customers Back)", icon: <RefreshCcw size={16} />, href: "/winback" },
+    { title: "eBusiness Cards (Capture Contacts)", icon: <CreditCard size={16} />, href: "/ecards" },
+    { title: "For Local Businesses", icon: <Store size={16} />, subItems: [
+      "Restaurants & Cafes", "Auto Repair & Dealerships", "Dental & Medical Clinics", 
+      "Salons, Spas & Barbers", "Home Services", "Gyms & Fitness Studios", 
+      "Retail & Local Shops", "Property Services"
+    ] }
+  ];
+
   return (
-    <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <ShieldCheck className="h-6 w-6 text-white" />
-            </div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight">ReputationAI</span>
+    <nav className={`fixed top-0 w-full z-[60] transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-md border-b border-white/5 py-1' : 'bg-transparent py-4'}`}>
+      <div className="max-w-7xl mx-auto px-6 flex justify-end mb-1">
+        <button onClick={() => window.location.href = 'mailto:sales@neviane.com'} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all group shadow-sm">
+          <div className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
           </div>
-          
-          <div className="hidden md:flex space-x-8 items-center">
-            <a href="/airecovery" className="text-slate-600 hover:text-blue-600 font-medium transition">AI Recovery</a>
-            <a href="/winback" className="text-slate-600 hover:text-blue-600 font-medium transition">Win-Back Engine</a>
-            {/* <a href="#loss-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Loss Calculator</a> */}
-            {/* NEW LINK for Recovery Calculator */}
-            <a href="#recovery-calc" className="text-slate-600 hover:text-blue-600 font-medium transition">Recovery Calculator</a>
-            <a href="/price" className="text-slate-600 hover:text-blue-600 font-medium transition">Pricing</a>
-            <a href="/ecards" className="text-slate-600 hover:text-blue-600 font-medium transition">Ecards</a>
-            <a href="/terms" className="text-slate-600 hover:text-blue-600 font-medium transition">Terms</a>
-            {isAuthenticated ? (
-              <>
-                <button 
-                  onClick={() => window.location.href = '/dashboard'}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
-                >
-                  Dashboard
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  onClick={() => window.location.href = '/account/login'}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
-                >
-                  Login
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/account/sign-up'}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md"
-                >
-                  Register
-                </button>
-              </>
-            )}
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 group-hover:text-white">Contact Sales</span>
+        </button>
+      </div>
+
+      <div className={`max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-14' : 'h-20'}`}>
+        <div onClick={() => window.location.href = '/'} className="flex items-center gap-3 group cursor-pointer flex-shrink-0">
+          <div className="bg-indigo-600 p-2 rounded-lg group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/40">
+            <Shield className="text-white w-5 h-5" />
           </div>
-          <div className="md:hidden flex items-center">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-slate-600 hover:text-slate-900">
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+          <div className="flex flex-col leading-none">
+            <span className="font-bold text-xl tracking-tight text-white">Neviane</span>
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em] mt-1">reputation ai</span>
           </div>
         </div>
+
+        <div className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-400">
+          <div className="relative h-full flex items-center" ref={solutionsRef}>
+            <button 
+              onClick={(e) => { 
+                e.preventDefault(); 
+                setIsSolutionsOpen(!isSolutionsOpen); 
+                setIsResourcesOpen(false); 
+                if (isSolutionsOpen) setIsLocalBusinessOpen(false); 
+              }} 
+              className={`flex items-center gap-1.5 transition-colors focus:outline-none py-2 ${isSolutionsOpen ? 'text-white' : 'hover:text-white'}`}
+            >
+              Solutions <ChevronDown size={14} className={`transition-transform duration-300 ${isSolutionsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isSolutionsOpen && (
+              <div 
+                onMouseLeave={() => {setIsSolutionsOpen(false); setIsLocalBusinessOpen(false);}} 
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-80 bg-slate-900 border border-white/10 rounded-[1.5rem] shadow-2xl p-3 animate-in fade-in slide-in-from-top-2"
+              >
+                <div className="grid gap-1">
+                  {solutionsItems.map((item) => (
+                    <div key={item.title} className="relative">
+                      <a 
+                        href={item.href || '#'} 
+                        onClick={(e) => { 
+                          if (item.subItems) { 
+                            e.preventDefault(); 
+                            setIsLocalBusinessOpen(!isLocalBusinessOpen); 
+                          } else {
+                            setIsSolutionsOpen(false);
+                          }
+                        }} 
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-slate-500 group-hover:text-indigo-400 transition-colors">{item.icon}</span>
+                          {item.title}
+                        </div>
+                        {item.subItems && <ChevronRight size={14} className={`transition-transform duration-300 ${isLocalBusinessOpen ? 'rotate-90' : ''}`} />}
+                      </a>
+                      {item.subItems && isLocalBusinessOpen && (
+                        <div className="lg:absolute lg:left-full lg:top-0 lg:ml-2 w-72 bg-slate-900 border border-white/10 rounded-[1.5rem] shadow-2xl p-3 animate-in fade-in slide-in-from-left-2">
+                          <div className="grid gap-1">
+                            {item.subItems.map((sub) => (
+                              <a 
+                                key={sub} 
+                                href="#" 
+                                onClick={(e) => { e.preventDefault(); setIsSolutionsOpen(false); }} 
+                                className="block px-4 py-2 text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all text-left"
+                              >
+                                {sub}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <a href="/how-it-works" className="hover:text-white transition-colors py-2">How It Works</a>
+          <a href="/calculator" className="hover:text-white transition-colors py-2">Calculator</a>
+          <a href="/demo" className="hover:text-white transition-colors py-2">Demo</a>
+          <div className="relative h-full flex items-center" ref={resourcesRef}>
+            <button 
+              onClick={(e) => { 
+                e.preventDefault(); 
+                setIsResourcesOpen(!isResourcesOpen); 
+                setIsSolutionsOpen(false); 
+              }} 
+              className={`flex items-center gap-1.5 transition-colors focus:outline-none py-2 ${isResourcesOpen ? 'text-white' : 'hover:text-white'}`}
+            >
+              Resources <ChevronDown size={14} className={`transition-transform duration-300 ${isResourcesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isResourcesOpen && (
+              <div 
+                onMouseLeave={() => setIsResourcesOpen(false)} 
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-80 bg-slate-900 border border-white/10 rounded-[1.5rem] shadow-2xl p-3 animate-in fade-in slide-in-from-top-2"
+              >
+                <div className="grid gap-1">
+                  {["Blog / Insights", "Guides / How-To's", "Templates & Tools", "FAQs", "Customer Stories", "Webinars / Videos", "Glossary", "Support Center", "Legal Guides"].map((item) => (
+                    <a 
+                      key={item} 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsResourcesOpen(false); }} 
+                      className="block px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-left"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-4">
+          {isAuthenticated ? (
+            <>
+              <button 
+                onClick={() => window.location.href = '/dashboard'}
+                className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                Dashboard
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="bg-indigo-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-white hover:text-slate-950 transition-all shadow-lg"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={() => window.location.href = '/account/login'}
+                className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                Login
+              </button>
+              <button 
+                onClick={() => window.location.href = '/getlivedemo'}
+                className="bg-indigo-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-white hover:text-slate-950 transition-all shadow-lg"
+              >
+                Get Started
+              </button>
+            </>
+          )}
+        </div>
+        <button 
+          className="lg:hidden p-2 text-slate-400 hover:text-white" 
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
       </div>
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
-          >
-            <div className="px-4 pt-2 pb-6 space-y-2">
-              <a href="/airecovery" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">AI Recovery</a>
-              <a href="/winback" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Win-Back Engine</a>
-              {/* <a href="#loss-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Loss Calculator</a> */}
-              {/* NEW MOBILE LINK for Recovery Calculator */}
-              <a href="#recovery-calc" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Recovery Calculator</a>
-              <a href="/price" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Pricing</a>
-              <a href="/Ecards" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Ecards</a>
-              <a href="/terms" className="block px-3 py-2 text-base font-medium text-slate-600 hover:bg-gray-50 rounded-md">Terms</a>
+
+      {isOpen && (
+        <div className="fixed inset-0 top-20 w-full bg-slate-950 z-50 p-6 lg:hidden animate-in fade-in slide-in-from-right duration-300 overflow-y-auto border-t border-white/5">
+          <div className="flex flex-col gap-8 pb-10">
+            <div className="space-y-4">
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] pl-2">Solutions</span>
+              <div className="grid gap-2">
+                {solutionsItems.map(item => (
+                  <div key={item.title} className="flex flex-col gap-2">
+                    <a 
+                      href={item.href || '#'}
+                      onClick={(e) => { 
+                        if (item.subItems) { 
+                          e.preventDefault(); 
+                          setIsLocalBusinessOpen(!isLocalBusinessOpen); 
+                        } else {
+                          setIsOpen(false);
+                        }
+                      }} 
+                      className="flex items-center justify-between gap-3 p-4 bg-white/5 rounded-2xl text-base font-bold text-slate-300 text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-indigo-400">{item.icon}</span>
+                        {item.title}
+                      </div>
+                      {item.subItems && <ChevronDown size={18} className={`transition-transform duration-300 ${isLocalBusinessOpen ? 'rotate-180' : ''}`} />}
+                    </a>
+                    {item.subItems && isLocalBusinessOpen && (
+                      <div className="grid gap-1 pl-4 mb-2">
+                        {item.subItems.map(sub => (
+                          <a 
+                            key={sub} 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); setIsOpen(false); }} 
+                            className="p-3 text-sm font-semibold text-slate-500 hover:text-indigo-400 border-l border-white/5 text-left"
+                          >
+                            {sub}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] pl-2">Platform</span>
+              <a href="/how-it-works" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">How It Works</a>
+              <a href="/calculator" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Calculator</a>
+              <a href="/demo" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Demo</a>
+            </div>
+            <div className="flex flex-col gap-4 mt-4">
+              <button 
+                onClick={() => window.location.href = 'mailto:sales@neviane.com'} 
+                className="w-full py-5 text-lg font-bold text-indigo-400 border border-indigo-500/20 rounded-2xl text-center"
+              >
+                Contact Sales
+              </button>
               {isAuthenticated ? (
                 <>
                   <button 
-                    onClick={() => window.location.href = '/dashboard'}
-                    className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                    onClick={() => { setIsOpen(false); window.location.href = '/dashboard'; }} 
+                    className="w-full py-5 text-lg font-bold text-slate-400 border border-white/10 rounded-2xl text-center"
                   >
                     Dashboard
                   </button>
                   <button 
-                    onClick={handleLogout}
-                    className="w-full mt-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                    onClick={handleLogout} 
+                    className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl text-center"
                   >
                     Logout
                   </button>
@@ -159,71 +329,67 @@ const Navbar = () => {
               ) : (
                 <>
                   <button 
-                    onClick={() => window.location.href = '/account/login'}
-                    className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                    onClick={() => { setIsOpen(false); window.location.href = '/account/login'; }} 
+                    className="w-full py-5 text-lg font-bold text-slate-400 border border-white/10 rounded-2xl text-center"
                   >
                     Login
                   </button>
                   <button 
-                    onClick={() => window.location.href = '/account/sign-up'}
-                    className="w-full mt-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-3 rounded-lg font-semibold transition shadow-md"
+                    onClick={() => { setIsOpen(false); window.location.href = '/getlivedemo'; }} 
+                    className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl text-center"
                   >
-                    Register
+                    Get Started Free
                   </button>
                 </>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
 
 const Hero = () => {
   return (
-    <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden bg-gradient-to-b from-slate-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-sm font-semibold mb-8">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-            </span>
-            AI Agentic Replacement is here
+    <section className="relative w-full min-h-screen flex items-center justify-center pt-32 pb-20 px-6 text-center bg-slate-950">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.15),transparent_70%)] pointer-events-none"></div>
+      <div className="relative z-10 max-w-[95rem] mx-auto">
+        <h1 className="text-5xl md:text-8xl lg:text-[9rem] font-[1000] text-white mb-10 tracking-[-0.04em] leading-[0.85] drop-shadow-2xl">
+          Turn 1-Star Reviews <br className="hidden lg:block" /> Into 5-Star Wins <span className="text-indigo-500">— Automatically</span>
+        </h1>
+        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-indigo-100/95 mb-6 max-w-6xl mx-auto leading-[1.05] tracking-tight">
+          Bring Back Customers Who Stopped Coming <br className="hidden md:block" />{' '}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+            Automatically and on autopilot
+          </span>
+        </h2>
+        <div className="mb-10 animate-in slide-in-from-bottom-2 duration-1000">
+          <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-sm md:text-xl font-bold shadow-[0_0_25px_rgba(79,70,229,0.15)] backdrop-blur-sm">
+            <Zap size={18} className="fill-indigo-400" />
+            Built for local businesses that can't afford bad reviews or lost customers.
           </div>
-          
-          <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 leading-tight">
-            Turn Customers Into <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Promoters — Automatically</span>
-          </h1>
-          
-          <p className="mt-4 text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed">
-            The AI that prevents bad reviews, wins back unhappy customers, and replaces a full-time staff member. Stop 1-star reviews before they hit Google.
+        </div>
+        <p className="text-indigo-200/60 text-lg md:text-2xl font-semibold mb-14 max-w-4xl mx-auto leading-relaxed">
+          AI brings back customers absent 30–60+ days with automatic, friendly messages.
+        </p>
+        <div className="text-indigo-400/80 font-bold text-[10px] md:text-base mb-14 flex flex-wrap items-center justify-center gap-3 md:gap-8 uppercase tracking-[0.2em]">
+          <span>AI Recovery</span> • <span>1-Star Prevention</span> • <span>Win-Back Engine</span> • <span>Digital eBusiness Card</span>
+        </div>
+        <p className="text-slate-400 text-base md:text-xl font-medium max-w-3xl mx-auto leading-relaxed mb-16 opacity-80 px-4">
+          Protect your reputation, recover unhappy customers, and bring them back before they leave.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+          <a 
+            href="/getlivedemo" 
+            className="w-full sm:w-auto bg-white text-slate-950 px-10 py-5 rounded-2xl font-black text-xl shadow-2xl shadow-white/5 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-3 group"
+          >
+            Get Started Free <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+          </a>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+            <Shield size={14} className="text-indigo-500" /> No credit card required
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="/getlivedemo" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold transition shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2">
-              Learn More <ArrowRight className="h-5 w-5" />
-            </a>
-            <button className="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
-              Try Free for 7 Days
-            </button>
-          </div>
-          <div className="mt-12 flex flex-wrap justify-center gap-y-4 gap-x-8 text-sm font-medium text-slate-500">
-            <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Stops 1-star reviews</div>
-            <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Saves thousands in revenue</div>
-            <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Includes eBusiness Cards</div>
-          </div>
-        </motion.div>
-      </div>
-      {/* Abstract Background Element */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full z-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
+        </div>
       </div>
     </section>
   );
@@ -335,7 +501,7 @@ const FeatureRecovery = () => {
           <div className="order-1 lg:order-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 text-center">
-                <ShieldCheck className="h-10 w-10 text-blue-600 mx-auto mb-3" />
+                <Shield className="h-10 w-10 text-blue-600 mx-auto mb-3" />
                 <div className="font-bold text-slate-900">Saves Reputation</div>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 text-center">
@@ -1372,7 +1538,7 @@ const DashboardShowcase = () => {
                               <CheckCircle className="h-3 w-3" /> Offer Accepted
                            </span>
                            <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded border border-blue-400/20 flex items-center gap-1">
-                              <ShieldCheck className="h-3 w-3" /> Review Prevented
+                              <Shield className="h-3 w-3" /> Review Prevented
                            </span>
                         </div>
                      </div>
@@ -1948,7 +2114,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
           <div className="mb-4 md:mb-0 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" /> ReputationAI © {new Date().getFullYear()}
+            <Shield className="h-5 w-5" /> ReputationAI © {new Date().getFullYear()}
           </div>
           <div className="space-x-6">
             <a href="#" className="hover:text-white transition">Privacy Policy</a>
@@ -1963,11 +2129,10 @@ const Footer = () => {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen font-sans text-slate-900 bg-white selection:bg-blue-200">
+    <div className="min-h-screen font-sans text-slate-100 bg-slate-950 selection:bg-indigo-500/30 overflow-x-hidden">
       <Navbar />
       <main>
         <Hero />
-        <LiveSimulationSection />
         <ProblemSection />
         <FeatureRecovery />
         <StaffReplacement />

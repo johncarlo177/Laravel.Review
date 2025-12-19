@@ -21,6 +21,9 @@ import AIRecoveryPage from './pages/airecovery/index';
 import NotFoundPage from './pages/errors/404';
 import SubscriptionPage from './pages/subscription/index';
 import VerifyEmailPage from './pages/account/verify-email';
+import HowItWorksPage from './pages/how-it-works/index';
+import CalculatorPage from './pages/calculator/index';
+import DemoPage from './pages/demo/index';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -38,6 +41,9 @@ const pages = {
     'airecovery/index': AIRecoveryPage,
     'errors/404': NotFoundPage,
     'subscription/index': SubscriptionPage,
+    'how-it-works/index': HowItWorksPage,
+    'calculator/index': CalculatorPage,
+    'demo/index': DemoPage,
 };
 
 createInertiaApp({

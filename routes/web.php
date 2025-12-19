@@ -514,6 +514,21 @@ Route::get('/winback-calulator', function () {
     return Inertia::render('winback-calulator/index');
 })->name('winback.calculator');
 
+// How It Works page route
+Route::get('/how-it-works', function () {
+    return Inertia::render('how-it-works/index');
+})->name('how-it-works');
+
+// Calculator page route
+Route::get('/calculator', function () {
+    return Inertia::render('calculator/index');
+})->name('calculator');
+
+// Demo page route
+Route::get('/demo', function () {
+    return Inertia::render('demo/index');
+})->name('demo');
+
 Route::get('/{frontend}', function () {
     return view('blue.pages.dashboard');
 })->where('frontend', MainLayoutComposer::PATTERN_PWA_ROUTES);

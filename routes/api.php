@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AiGeneratorController;
 use App\Http\Controllers\BenchmarkController;
 use App\Http\Controllers\BillingCollectionController;
@@ -100,6 +101,8 @@ Route::prefix('/install')->group(function () {
 CustomFormsRouter::publicRoutes();
 
 Route::post('/login', [AccountController::class, 'login']);
+
+Route::post('/admin/login', [AdminController::class, 'login']);
 
 Route::post('/register', [AccountController::class, 'register']);
 

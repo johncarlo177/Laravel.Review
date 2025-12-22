@@ -25,6 +25,8 @@ import HowItWorksPage from './pages/how-it-works/index';
 import CalculatorPage from './pages/calculator/index';
 import DemoPage from './pages/demo/index';
 import ResourcesPage from './pages/resources/index';
+import AdminLoginPage from './pages/admin/Login';
+import AdminDashboardPage from './pages/admin/Dashboard';
 
 const pages = {
     'feedbacks/index': FeedbacksIndex,
@@ -46,6 +48,8 @@ const pages = {
     'calculator/index': CalculatorPage,
     'demo/index': DemoPage,
     'resources/index': ResourcesPage,
+    'admin/Login': AdminLoginPage,
+    'admin/Dashboard': AdminDashboardPage,
 };
 
 createInertiaApp({

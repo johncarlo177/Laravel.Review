@@ -13,6 +13,7 @@ use App\Http\Controllers\SystemController;
 use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BenchmarkController;
 use App\Http\Controllers\BulkOperationsController;
 use App\Http\Controllers\CheckoutController;
@@ -622,6 +623,11 @@ Route::post('/feedbacks/recovery/{conversation}/continue', [FeedbackController::
 Route::get('/feedbacks/recovery/last', [FeedbackController::class, 'getLastConversation'])->name('feedbacks.recovery.last');
 
 DashboardAssetsServer::registerWebRoute();
+
+// Admin Routes
+Route::get('/admin/login', [AdminController::class, 'showLogin'])->name('admin.login');
+Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+Route::get('/admin/logout', [AdminController::class, 'logout'])->name('admin.logout');
 
 Scramble::registerUiRoute(path: 'docs/api')->name('scramble.docs.ui');
 

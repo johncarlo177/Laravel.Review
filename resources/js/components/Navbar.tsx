@@ -59,7 +59,7 @@ export const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 w-full z-[60] transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-md border-b border-white/5' : 'bg-transparent'}`}>
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex justify-end transition-all duration-300 ${scrolled ? 'py-1' : 'py-2 sm:py-3'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex justify-end transition-all duration-300`}>
         <button onClick={() => window.location.href = 'mailto:sales@neviane.com'} className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all group shadow-sm">
           <div className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -69,7 +69,7 @@ export const Navbar = () => {
         </button>
       </div>
 
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-14' : 'h-16 sm:h-20'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-300 h-14 lg:h-20`}>
         <div onClick={() => window.location.href = '/'} className="flex items-center gap-2 sm:gap-3 group cursor-pointer flex-shrink-0">
           <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/40">
             <Shield className="text-white w-4 h-4 sm:w-5 sm:h-5" />
@@ -245,7 +245,7 @@ export const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="fixed w-full bg-slate-950 z-50 lg:hidden animate-in fade-in slide-in-from-right duration-300 overflow-y-auto border-t border-white/5 top-[6rem] h-[calc(100vh-6rem)]">
+        <div className={`fixed w-full bg-slate-950 z-50 lg:hidden animate-in fade-in slide-in-from-right duration-300 overflow-y-auto border-t border-white/5 top-[5rem] h-[calc(100vh-5rem)]`}>
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-2">
               {/* Solutions (Collapsible) */}

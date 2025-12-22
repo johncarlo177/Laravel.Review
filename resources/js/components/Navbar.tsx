@@ -7,6 +7,8 @@ export const Navbar = () => {
   const [isSolutionsOpen, setIsSolutionsOpen] = useState(false);
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const [isLocalBusinessOpen, setIsLocalBusinessOpen] = useState(false);
+  const [isMobileResourcesOpen, setIsMobileResourcesOpen] = useState(false);
+  const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const solutionsRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
@@ -56,25 +58,25 @@ export const Navbar = () => {
   ];
 
   return (
-    <nav className={`fixed top-0 w-full z-[60] transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-md border-b border-white/5 py-1' : 'bg-transparent py-4'}`}>
-      <div className="max-w-7xl mx-auto px-6 flex justify-end mb-1">
-        <button onClick={() => window.location.href = 'mailto:sales@neviane.com'} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all group shadow-sm">
+    <nav className={`fixed top-0 w-full z-[60] transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-md border-b border-white/5' : 'bg-transparent'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex justify-end transition-all duration-300 ${scrolled ? 'py-1' : 'py-2 sm:py-3'}`}>
+        <button onClick={() => window.location.href = 'mailto:sales@neviane.com'} className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all group shadow-sm">
           <div className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 group-hover:text-white">Contact Sales</span>
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 group-hover:text-white">Contact Sales</span>
         </button>
       </div>
 
-      <div className={`max-w-7xl mx-auto px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-14' : 'h-20'}`}>
-        <div onClick={() => window.location.href = '/'} className="flex items-center gap-3 group cursor-pointer flex-shrink-0">
-          <div className="bg-indigo-600 p-2 rounded-lg group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/40">
-            <Shield className="text-white w-5 h-5" />
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-14' : 'h-16 sm:h-20'}`}>
+        <div onClick={() => window.location.href = '/'} className="flex items-center gap-2 sm:gap-3 group cursor-pointer flex-shrink-0">
+          <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/40">
+            <Shield className="text-white w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-bold text-xl tracking-tight text-white">Neviane</span>
-            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em] mt-1">reputation ai</span>
+            <span className="font-bold text-lg sm:text-xl tracking-tight text-white">Neviane</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em] mt-0.5 sm:mt-1">reputation ai</span>
           </div>
         </div>
 
@@ -234,82 +236,160 @@ export const Navbar = () => {
           )}
         </div>
         <button 
-          className="lg:hidden p-2 text-slate-400 hover:text-white" 
+          className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors flex-shrink-0" 
           onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
         >
-          {isOpen ? <X size={26} /> : <Menu size={26} />}
+          {isOpen ? <X size={24} className="sm:w-6 sm:h-6" /> : <Menu size={24} className="sm:w-6 sm:h-6" />}
         </button>
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 top-20 w-full bg-slate-950 z-50 p-6 lg:hidden animate-in fade-in slide-in-from-right duration-300 overflow-y-auto border-t border-white/5">
-          <div className="flex flex-col gap-8 pb-10">
-            <div className="space-y-4">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] pl-2">Solutions</span>
-              <div className="grid gap-2">
-                {solutionsItems.map(item => (
-                  <div key={item.title} className="flex flex-col gap-2">
-                    <a 
-                      href={item.href || '#'}
-                      onClick={(e) => { 
-                        if (item.subItems) { 
-                          e.preventDefault(); 
-                          setIsLocalBusinessOpen(!isLocalBusinessOpen); 
-                        } else {
-                          setIsOpen(false);
-                        }
-                      }} 
-                      className="flex items-center justify-between gap-3 p-4 bg-white/5 rounded-2xl text-base font-bold text-slate-300 text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-indigo-400">{item.icon}</span>
-                        {item.title}
+        <div className="fixed w-full bg-slate-950 z-50 lg:hidden animate-in fade-in slide-in-from-right duration-300 overflow-y-auto border-t border-white/5 top-[6rem] h-[calc(100vh-6rem)]">
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-2">
+              {/* Solutions (Collapsible) */}
+              <div className="border-b border-white/5">
+                <button
+                  onClick={() => setIsMobileSolutionsOpen(!isMobileSolutionsOpen)}
+                  className="w-full flex items-center justify-between p-4 text-xl font-bold text-white text-left"
+                >
+                  Solutions
+                  <ChevronDown size={20} className={`transition-transform duration-300 ${isMobileSolutionsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isMobileSolutionsOpen && (
+                  <div className="grid gap-2 pb-4">
+                    {solutionsItems.map(item => (
+                      <div key={item.title} className="flex flex-col gap-2">
+                        <a 
+                          href={item.href || '#'}
+                          onClick={(e) => { 
+                            if (item.subItems) { 
+                              e.preventDefault(); 
+                              setIsLocalBusinessOpen(!isLocalBusinessOpen); 
+                            } else {
+                              setIsOpen(false);
+                            }
+                          }} 
+                          className="flex items-center justify-between gap-3 p-3 pl-6 text-base font-semibold text-slate-300 hover:text-white text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-indigo-400">{item.icon}</span>
+                            {item.title}
+                          </div>
+                          {item.subItems && <ChevronDown size={16} className={`transition-transform duration-300 ${isLocalBusinessOpen ? 'rotate-180' : ''}`} />}
+                        </a>
+                        {item.subItems && isLocalBusinessOpen && (
+                          <div className="grid gap-1 pl-12">
+                            {item.subItems.map(sub => (
+                              <a 
+                                key={sub} 
+                                href="#" 
+                                onClick={(e) => { e.preventDefault(); setIsOpen(false); }} 
+                                className="p-2 text-sm font-medium text-slate-400 hover:text-indigo-400 text-left"
+                              >
+                                {sub}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {item.subItems && <ChevronDown size={18} className={`transition-transform duration-300 ${isLocalBusinessOpen ? 'rotate-180' : ''}`} />}
-                    </a>
-                    {item.subItems && isLocalBusinessOpen && (
-                      <div className="grid gap-1 pl-4 mb-2">
-                        {item.subItems.map(sub => (
-                          <a 
-                            key={sub} 
-                            href="#" 
-                            onClick={(e) => { e.preventDefault(); setIsOpen(false); }} 
-                            className="p-3 text-sm font-semibold text-slate-500 hover:text-indigo-400 border-l border-white/5 text-left"
-                          >
-                            {sub}
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* How It Works */}
+              <a 
+                href="/how-it-works" 
+                onClick={() => setIsOpen(false)} 
+                className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5"
+              >
+                How It Works
+              </a>
+
+              {/* Calculator */}
+              <a 
+                href="/calculator" 
+                onClick={() => setIsOpen(false)} 
+                className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5"
+              >
+                Calculator
+              </a>
+
+              {/* Demo */}
+              <a 
+                href="/demo" 
+                onClick={() => setIsOpen(false)} 
+                className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5"
+              >
+                Demo
+              </a>
+
+              {/* Resources (Collapsible) */}
+              <div className="border-b border-white/5">
+                <button
+                  onClick={() => setIsMobileResourcesOpen(!isMobileResourcesOpen)}
+                  className="w-full flex items-center justify-between p-4 text-xl font-bold text-white text-left"
+                >
+                  Resources
+                  <ChevronDown size={20} className={`transition-transform duration-300 ${isMobileResourcesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isMobileResourcesOpen && (
+                  <div className="grid gap-1 pb-4">
+                    <a 
+                      href="/resources" 
+                      onClick={(e) => { 
+                        e.preventDefault(); 
+                        setIsOpen(false);
+                        router.visit('/resources');
+                      }} 
+                      className="block px-4 py-3 pl-6 text-base font-semibold text-slate-300 hover:text-white text-left"
+                    >
+                      View All Resources
+                    </a>
+                    {[
+                      { label: "Blog / Insights", hash: "blog-insights" },
+                      { label: "Guides / How-To's", hash: "guides-how-tos" },
+                      { label: "Templates & Tools", hash: "templates-tools" },
+                      { label: "FAQs", hash: "faqs" },
+                      { label: "Customer Stories", hash: "customer-stories" },
+                      { label: "Webinars / Videos", hash: "webinars-videos" },
+                      { label: "Glossary", hash: "glossary" },
+                      { label: "Support Center", hash: "support-center" },
+                      { label: "Legal Guides", hash: "legal-guides" }
+                    ].map((item) => (
+                      <a
+                        key={item.hash} 
+                        href="/resources"
+                        onClick={(e) => { 
+                          e.preventDefault();
+                          setIsOpen(false);
+                          router.visit('/resources');
+                        }} 
+                        className="block px-4 py-2 pl-6 text-sm font-medium text-slate-400 hover:text-white text-left"
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="space-y-2">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] pl-2">Platform</span>
-              <a href="/how-it-works" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">How It Works</a>
-              <a href="/calculator" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Calculator</a>
-              <a href="/demo" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Demo</a>
-              <a href="/resources" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Resources</a>
-            </div>
-            <div className="flex flex-col gap-4 mt-4">
-              <button 
-                onClick={() => window.location.href = 'mailto:sales@neviane.com'} 
-                className="w-full py-5 text-lg font-bold text-indigo-400 border border-indigo-500/20 rounded-2xl text-center"
-              >
-                Contact Sales
-              </button>
+
+            {/* Bottom Actions */}
+            <div className="flex-shrink-0 px-4 sm:px-6 py-4 space-y-3 border-t border-white/5 bg-slate-950">
               {isAuthenticated ? (
                 <>
                   <button 
                     onClick={() => { setIsOpen(false); window.location.href = '/dashboard'; }} 
-                    className="w-full py-5 text-lg font-bold text-slate-400 border border-white/10 rounded-2xl text-center"
+                    className="w-full py-4 text-lg font-bold text-slate-300 border border-white/10 rounded-xl text-center hover:bg-white/5 transition-colors"
                   >
                     Dashboard
                   </button>
                   <button 
                     onClick={handleLogout} 
-                    className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl text-center"
+                    className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg text-center hover:bg-indigo-700 transition-colors"
                   >
                     Logout
                   </button>
@@ -318,15 +398,15 @@ export const Navbar = () => {
                 <>
                   <button 
                     onClick={() => { setIsOpen(false); window.location.href = '/account/login'; }} 
-                    className="w-full py-5 text-lg font-bold text-slate-400 border border-white/10 rounded-2xl text-center"
+                    className="w-full py-4 text-lg font-bold text-slate-300 border border-white/10 rounded-xl text-center hover:bg-white/5 transition-colors"
                   >
                     Login
                   </button>
                   <button 
                     onClick={() => { setIsOpen(false); window.location.href = '/getlivedemo'; }} 
-                    className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl text-center"
+                    className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg text-center hover:bg-indigo-700 transition-colors"
                   >
-                    Get Started Free
+                    Register
                   </button>
                 </>
               )}
@@ -337,4 +417,3 @@ export const Navbar = () => {
     </nav>
   );
 };
-

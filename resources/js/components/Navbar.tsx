@@ -9,6 +9,7 @@ export const Navbar = () => {
   const [isLocalBusinessOpen, setIsLocalBusinessOpen] = useState(false);
   const [isMobileResourcesOpen, setIsMobileResourcesOpen] = useState(false);
   const [isMobileSolutionsOpen, setIsMobileSolutionsOpen] = useState(false);
+  const [isMobileLocalBusinessOpen, setIsMobileLocalBusinessOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const solutionsRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
@@ -52,6 +53,10 @@ export const Navbar = () => {
         document.body.style.width = '';
         document.body.style.overflow = '';
         window.scrollTo(0, scrollY);
+        // Reset mobile menu states when menu closes
+        setIsMobileLocalBusinessOpen(false);
+        setIsMobileSolutionsOpen(false);
+        setIsMobileResourcesOpen(false);
       };
     }
   }, [isOpen]);
@@ -283,25 +288,33 @@ export const Navbar = () => {
                   <div className="grid gap-2 pb-4">
                     {solutionsItems.map(item => (
                       <div key={item.title} className="flex flex-col gap-2">
-                        <a 
-                          href={item.href || '#'}
-                          onClick={(e) => { 
-                            if (item.subItems) { 
-                              e.preventDefault(); 
-                              setIsLocalBusinessOpen(!isLocalBusinessOpen); 
-                            } else {
-                              setIsOpen(false);
-                            }
-                          }} 
-                          className="flex items-center justify-between gap-3 p-3 pl-6 text-base font-semibold text-slate-300 hover:text-white text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-indigo-400">{item.icon}</span>
-                            {item.title}
-                          </div>
-                          {item.subItems && <ChevronDown size={16} className={`transition-transform duration-300 ${isLocalBusinessOpen ? 'rotate-180' : ''}`} />}
-                        </a>
-                        {item.subItems && isLocalBusinessOpen && (
+                        {item.subItems ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setIsMobileLocalBusinessOpen(!isMobileLocalBusinessOpen);
+                            }}
+                            className="flex items-center justify-between gap-3 p-3 pl-6 text-base font-semibold text-slate-300 hover:text-white text-left w-full"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-indigo-400">{item.icon}</span>
+                              {item.title}
+                            </div>
+                            <ChevronDown size={16} className={`transition-transform duration-300 ${isMobileLocalBusinessOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                        ) : (
+                          <a 
+                            href={item.href || '#'}
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center justify-between gap-3 p-3 pl-6 text-base font-semibold text-slate-300 hover:text-white text-left"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-indigo-400">{item.icon}</span>
+                              {item.title}
+                            </div>
+                          </a>
+                        )}
+                        {item.subItems && isMobileLocalBusinessOpen && (
                           <div className="grid gap-1 pl-12">
                             {item.subItems.map(sub => (
                               <a 

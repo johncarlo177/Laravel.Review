@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useTransition } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 
 // --- MOCK DATA STRUCTURES ---
 const MOCK_ROLES = {
@@ -1125,6 +1125,14 @@ export default function AdminDashboard() {
 
     const handleRefresh = () => fetchData();
 
+    const handleLogout = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('admin:token');
+            localStorage.removeItem('admin:user');
+        }
+        router.visit('/admin/logout');
+    };
+
     // Placeholder for other sections - would need full implementation
     const renderContent = () => {
         if (loading || !config || !businesses || !plans || !flags || !health || !templates) {
@@ -1173,30 +1181,58 @@ export default function AdminDashboard() {
                     <div className="p-6 text-xl font-extrabold text-white border-b border-gray-800">
                         Super Admin
                     </div>
-                    <nav className="p-4 space-y-2">
-                        {navItems.map(item => (
+                    <nav className="p-4 space-y-2 flex flex-col h-[calc(100vh-5rem)]">
+                        <div className="flex-1 space-y-2">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setCurrentTab(item.id)}
+                                    className={`flex items-center w-full p-3 rounded-xl font-medium transition duration-150 ease-in-out ${
+                                        currentTab === item.id 
+                                            ? 'bg-indigo-600 text-white shadow-lg' 
+                                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d={item.icon} />
+                                    </svg>
+                                    {item.name}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="pt-4 border-t border-gray-800">
                             <button
-                                key={item.id}
-                                onClick={() => setCurrentTab(item.id)}
-                                className={`flex items-center w-full p-3 rounded-xl font-medium transition duration-150 ease-in-out ${
-                                    currentTab === item.id 
-                                        ? 'bg-indigo-600 text-white shadow-lg' 
-                                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                                }`}
+                                onClick={handleLogout}
+                                className="flex items-center w-full p-3 rounded-xl font-medium transition duration-150 ease-in-out text-red-400 hover:bg-red-900/20 hover:text-red-300"
                             >
                                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d={item.icon} />
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
                                 </svg>
-                                {item.name}
+                                Logout
                             </button>
-                        ))}
+                        </div>
                     </nav>
                 </aside>
 
                 <main className="flex-1 lg:ml-64 p-4 sm:p-8 overflow-y-auto w-full bg-gray-50">
                     <header className="lg:hidden mb-6">
                         <div className="bg-white p-4 rounded-xl shadow-md border border-gray-200">
-                            <h1 className="text-xl font-bold text-gray-900 mb-2">Admin: {navItems.find(i => i.id === currentTab)?.name}</h1>
+                            <div className="flex items-center justify-between mb-2">
+                                <h1 className="text-xl font-bold text-gray-900">Admin: {navItems.find(i => i.id === currentTab)?.name}</h1>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                        <polyline points="16 17 21 12 16 7" />
+                                        <line x1="21" y1="12" x2="9" y2="12" />
+                                    </svg>
+                                    Logout
+                                </button>
+                            </div>
                             <select
                                 value={currentTab}
                                 onChange={(e) => setCurrentTab(e.target.value)}

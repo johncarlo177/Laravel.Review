@@ -197,14 +197,39 @@ const Navbar = () => {
                 className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-80 bg-slate-900 border border-white/10 rounded-[1.5rem] shadow-2xl p-3 animate-in fade-in slide-in-from-top-2"
               >
                 <div className="grid gap-1">
-                  {["Blog / Insights", "Guides / How-To's", "Templates & Tools", "FAQs", "Customer Stories", "Webinars / Videos", "Glossary", "Support Center", "Legal Guides"].map((item) => (
-                    <a 
-                      key={item} 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); setIsResourcesOpen(false); }} 
-                      className="block px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-left"
+                  <a 
+                    href="/resources" 
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      setIsResourcesOpen(false);
+                      router.visit('/resources');
+                    }} 
+                    className="block px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-left"
+                  >
+                    View All Resources
+                  </a>
+                  {[
+                    { label: "Blog / Insights", hash: "blog-insights" },
+                    { label: "Guides / How-To's", hash: "guides-how-tos" },
+                    { label: "Templates & Tools", hash: "templates-tools" },
+                    { label: "FAQs", hash: "faqs" },
+                    { label: "Customer Stories", hash: "customer-stories" },
+                    { label: "Webinars / Videos", hash: "webinars-videos" },
+                    { label: "Glossary", hash: "glossary" },
+                    { label: "Support Center", hash: "support-center" },
+                    { label: "Legal Guides", hash: "legal-guides" }
+                  ].map((item) => (
+                    <a
+                      key={item.hash} 
+                      href="/resources"
+                      onClick={(e) => { 
+                        e.preventDefault();
+                        setIsResourcesOpen(false);
+                        router.visit('/resources');
+                      }} 
+                      className="block px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-left cursor-pointer"
                     >
-                      {item}
+                      {item.label}
                     </a>
                   ))}
                 </div>
@@ -303,6 +328,7 @@ const Navbar = () => {
               <a href="/how-it-works" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">How It Works</a>
               <a href="/calculator" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Calculator</a>
               <a href="/demo" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Demo</a>
+              <a href="/resources" onClick={() => setIsOpen(false)} className="block w-full text-left p-4 text-xl font-bold text-white border-b border-white/5">Resources</a>
             </div>
             <div className="flex flex-col gap-4 mt-4">
               <button 

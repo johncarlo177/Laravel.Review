@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePage, router } from '@inertiajs/react';
+import { LiveSimulationSection } from './components/LiveSimulationSection';
 
 // --- Components ---
 const Navbar = () => {
@@ -2159,6 +2160,7 @@ export default function HomePage() {
       <Navbar />
       <main>
         <Hero />
+        <LiveSimulationSection />
         <ProblemSection />
         <FeatureRecovery />
         <StaffReplacement />

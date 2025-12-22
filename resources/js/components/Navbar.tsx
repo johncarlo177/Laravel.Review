@@ -13,8 +13,9 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const solutionsRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
-  const { auth } = usePage().props as any;
+  const { auth, admin } = usePage().props as any;
   const isAuthenticated = auth?.user !== null && auth?.user !== undefined;
+  const isAdminAuthenticated = admin !== null && admin !== undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -71,6 +72,15 @@ export const Navbar = () => {
       document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     }
     window.location.href = '/auth0/logout?' + new Date().getTime();
+  };
+
+  const handleAdminLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin:token');
+      localStorage.removeItem('admin:user');
+    }
+    window.location.href = '/admin/logout';
   };
 
   const solutionsItems = [
@@ -230,7 +240,22 @@ export const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
-          {isAuthenticated ? (
+          {isAdminAuthenticated ? (
+            <>
+              <button 
+                onClick={() => window.location.href = '/admin/dashboard'}
+                className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                Dashboard
+              </button>
+              <button 
+                onClick={handleAdminLogout}
+                className="bg-indigo-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-white hover:text-slate-950 transition-all shadow-lg"
+              >
+                Logout
+              </button>
+            </>
+          ) : isAuthenticated ? (
             <>
               <button 
                 onClick={() => window.location.href = '/dashboard'}
@@ -414,7 +439,22 @@ export const Navbar = () => {
 
             {/* Bottom Actions */}
             <div className="flex-shrink-0 px-4 sm:px-6 py-4 space-y-3 border-t border-white/5 bg-slate-950">
-              {isAuthenticated ? (
+              {isAdminAuthenticated ? (
+                <>
+                  <button 
+                    onClick={() => { setIsOpen(false); window.location.href = '/admin/dashboard'; }} 
+                    className="w-full py-4 text-lg font-bold text-slate-300 border border-white/10 rounded-xl text-center hover:bg-white/5 transition-colors"
+                  >
+                    Dashboard
+                  </button>
+                  <button 
+                    onClick={(e) => { setIsOpen(false); handleAdminLogout(e); }} 
+                    className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg text-center hover:bg-indigo-700 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : isAuthenticated ? (
                 <>
                   <button 
                     onClick={() => { setIsOpen(false); window.location.href = '/dashboard'; }} 
@@ -423,7 +463,7 @@ export const Navbar = () => {
                     Dashboard
                   </button>
                   <button 
-                    onClick={handleLogout} 
+                    onClick={(e) => { setIsOpen(false); handleLogout(e); }} 
                     className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg text-center hover:bg-indigo-700 transition-colors"
                   >
                     Logout

@@ -103,6 +103,9 @@ class HandleInertiaRequests extends Middleware
             'image_url'  => config('app.url'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'csrf_token' => csrf_token(),
+            'admin' => function() use ($request) {
+                return session('admin');
+            },
             'auth'  => function() use ($request) {
                 $user = $request->user();
                 
